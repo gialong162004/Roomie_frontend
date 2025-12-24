@@ -93,30 +93,30 @@ const FavoriteRoomList: React.FC = () => {
   }, [selectedPostId]);
 
   // Callback để refresh danh sách khi có thay đổi favorite
-  const refreshFavorites = async () => {
-    try {
-      const response = await PostAPI.getFavoritePosts() as any;
-      const favorites = response.data || response || [];
+  // const refreshFavorites = async () => {
+  //   try {
+  //     const response = await PostAPI.getFavoritePosts() as any;
+  //     const favorites = response.data || response || [];
       
-      const roomsData: RoomCardType[] = favorites.map((item: any) => {
-        const post = item.post;
-        return {
-          _id: post._id,
-          image: post.images?.[0] || "https://visaho.vn/upload_images/images/2022/04/01/phan-loai-can-ho-chung-cu-7.jpg",
-          type: post.title,
-          area: `${post.superficies ?? "--"} m²`,
-          address: `${post.district}, ${post.city}`,
-          rooms: 1,
-          price: post.price.toLocaleString(),
-          badge: post.category?.name || "Đã duyệt",
-        };
-      });
+  //     const roomsData: RoomCardType[] = favorites.map((item: any) => {
+  //       const post = item.post;
+  //       return {
+  //         _id: post._id,
+  //         image: post.images?.[0] || "https://visaho.vn/upload_images/images/2022/04/01/phan-loai-can-ho-chung-cu-7.jpg",
+  //         type: post.title,
+  //         area: `${post.superficies ?? "--"} m²`,
+  //         address: `${post.district}, ${post.city}`,
+  //         rooms: 1,
+  //         price: post.price.toLocaleString(),
+  //         badge: post.category?.name || "Đã duyệt",
+  //       };
+  //     });
 
-      setRooms(roomsData);
-    } catch (err) {
-      console.error("Error refreshing favorites:", err);
-    }
-  };
+  //     setRooms(roomsData);
+  //   } catch (err) {
+  //     console.error("Error refreshing favorites:", err);
+  //   }
+  // };
 
   const getPostedTimeAgo = (updatedAt: string) => {
     const updatedTime = new Date(updatedAt).getTime();

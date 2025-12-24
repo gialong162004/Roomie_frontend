@@ -71,7 +71,7 @@ const NotificationBox = ({ userId, token }: NotificationBoxProps) => {
   };
 
   // Khởi tạo socket với các handlers
-  const socketRef = useSocket({
+  useSocket({
     currentUserId: userId,
     selectedContactId: null,
     onMessageHistory: () => {},

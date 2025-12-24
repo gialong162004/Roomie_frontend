@@ -7,7 +7,6 @@ import Toast from "../components/common/Toast"; // 👈 import Toast
 
 export default function Login() {
   const navigate = useNavigate();
-  const [error, setError] = useState("");
   const [toast, setToast] = useState<{ message: string; subtitle:string; type: "success" | "error" | "info" } | null>(null);
 
   const showToast = (message: string, subtitle:string, type: "success" | "error" | "info") => {
@@ -16,7 +15,6 @@ export default function Login() {
 
   const handleLogin = async (data: LoginPayload) => {
     try {
-      setError("");
       const res = await AuthAPI.login({
         email: data.email,
         password: data.password,
@@ -41,7 +39,6 @@ export default function Login() {
     } catch (err: any) {
       console.error("❌ Login failed:", err);
       const msg = err?.response?.data?.message || "Đăng nhập thất bại!";
-      setError(msg);
       showToast(msg, `${JSON.stringify(err.error)} vui lòng liên hệ ...`, "error");
     }
   };
