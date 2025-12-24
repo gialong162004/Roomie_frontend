@@ -1,0 +1,17 @@
+@import "@fortawesome/fontawesome-free/css/all.min.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* (Tuỳ chọn) Nếu dùng Font Awesome thì thêm: */
+/* @import "@fortawesome/fontawesome-free/css/all.min.css"; */
+
+html, body, #root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
