@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import VerifyOTP from "./pages/VerifyOTP";
 import ProfilePage from "./pages/Profile";
 import SavedPostsPage from "./components/posts/savedPost";
+import IntroPage from "./pages/Intro";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="profile" element={<ProfilePage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="saved-posts" element={<SavedPostsPage />} />
+        <Route path="about" element={<IntroPage />} />
       </Route>
       <Route path="login" element={<Login />} />
       <Route path="register" element={<Register />} />
