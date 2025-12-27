@@ -11,6 +11,7 @@ export interface Message {
   isEdited?: boolean;
   isRecalled?: boolean;
   seenBy?: string[];
+  images?: string[];
 }
 
 interface MessageListProps {

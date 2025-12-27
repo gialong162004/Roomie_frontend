@@ -55,7 +55,10 @@ const ChatWidget: React.FC = () => {
     }
   };
 
+  // Thay thế hàm handleNewMessage hiện tại bằng version này:
+
   const handleNewMessage = (newMessage: any) => {
+    console.log('📨 Received new message:', newMessage);
     
     const senderId = newMessage.sender?._id || newMessage.sender?.id || newMessage.senderId;
     const conversationId = newMessage.conversation || newMessage.conversationId;
@@ -67,7 +70,7 @@ const ChatWidget: React.FC = () => {
     
     const formattedMessage: Message = {
       id: newMessage._id || newMessage.id,
-      text: newMessage.text || newMessage.content,
+      text: newMessage.text || newMessage.content || '',
       sender: (senderId === currentUserId ? 'user' : 'landlord') as 'user' | 'landlord',
       timestamp: new Date(newMessage.createdAt || newMessage.timestamp || Date.now()),
       senderId: senderId,
@@ -75,9 +78,12 @@ const ChatWidget: React.FC = () => {
       isEdited: newMessage.isEdited || false,
       isRecalled: newMessage.isRecalled || false,
       seenBy: newMessage.seenBy || [],
+      images: newMessage.images || [], // ✅ Đảm bảo lấy images từ server
     };
     
-    // CẬP NHẬT: Chỉ loại bỏ tin nhắn tạm của chính mình
+    console.log('📸 Formatted message images:', formattedMessage.images);
+    
+    // CẬP NHẬT: Logic xử lý tin nhắn tạm và thật
     setConversationsMap(prev => {
       const existingMessages = prev[conversationId] || [];
       
@@ -85,43 +91,88 @@ const ChatWidget: React.FC = () => {
       const messageExists = existingMessages.some(msg => msg.id === formattedMessage.id);
       
       if (messageExists) {
+        console.log('⚠️ Message already exists, skipping:', formattedMessage.id);
         return prev;
       }
       
-      // Nếu là tin nhắn của mình (user), loại bỏ tin nhắn tạm
-      const filteredMessages = senderId === currentUserId
-        ? existingMessages.filter(msg => !msg.id.startsWith('temp_'))
-        : existingMessages;
+      // ✅ FIX: Nếu là tin nhắn của mình, tìm và thay thế tin nhắn tạm
+      // thay vì xóa tất cả tin nhắn tạm
+      let updatedMessages = [...existingMessages];
+      
+      if (senderId === currentUserId) {
+        // Tìm tin nhắn tạm gần nhất (theo timestamp)
+        const tempMessageIndex = updatedMessages.findIndex(msg => 
+          msg.id.startsWith('temp_') && 
+          msg.sender === 'user' &&
+          // So sánh nội dung để tìm đúng tin nhắn tạm
+          (msg.text === formattedMessage.text || 
+          (msg.images && msg.images.length > 0 && formattedMessage.images && formattedMessage.images.length > 0))
+        );
+        
+        if (tempMessageIndex !== -1) {
+          console.log('🔄 Replacing temp message at index:', tempMessageIndex);
+          // Thay thế tin nhắn tạm bằng tin nhắn thật
+          updatedMessages[tempMessageIndex] = formattedMessage;
+        } else {
+          console.log('➕ No temp message found, adding new message');
+          // Không tìm thấy tin nhắn tạm, thêm mới
+          updatedMessages.push(formattedMessage);
+        }
+      } else {
+        // Tin nhắn từ người khác, thêm trực tiếp
+        updatedMessages.push(formattedMessage);
+      }
       
       return {
         ...prev,
-        [conversationId]: [...filteredMessages, formattedMessage]
+        [conversationId]: updatedMessages
       };
     });
 
+    // Cập nhật messages nếu đang xem conversation này
     if (selectedContact?.id === conversationId) {
       setMessages(prev => {
-        // Kiểm tra xem tin nhắn này đã tồn tại chưa
         const messageExists = prev.some(msg => msg.id === formattedMessage.id);
         
         if (messageExists) {
+          console.log('⚠️ Message already exists in current view, skipping');
           return prev;
         }
         
-        // Nếu là tin nhắn của mình, loại bỏ tin nhắn tạm
-        const filteredMessages = senderId === currentUserId
-          ? prev.filter(msg => !msg.id.startsWith('temp_'))
-          : prev;
+        let updatedMessages = [...prev];
         
-        return [...filteredMessages, formattedMessage];
+        if (senderId === currentUserId) {
+          const tempMessageIndex = updatedMessages.findIndex(msg => 
+            msg.id.startsWith('temp_') && 
+            msg.sender === 'user' &&
+            (msg.text === formattedMessage.text || 
+            (msg.images && msg.images.length > 0 && formattedMessage.images && formattedMessage.images.length > 0))
+          );
+          
+          if (tempMessageIndex !== -1) {
+            updatedMessages[tempMessageIndex] = formattedMessage;
+          } else {
+            updatedMessages.push(formattedMessage);
+          }
+        } else {
+          updatedMessages.push(formattedMessage);
+        }
+        
+        return updatedMessages;
       });
     }
+    
+    // Cập nhật lastMessage trong contact list
+    const displayText = formattedMessage.text || 
+      (formattedMessage.images && formattedMessage.images.length > 0 
+        ? `📷 ${formattedMessage.images.length} ảnh` 
+        : '');
     
     setContacts(prev => prev.map(c => 
       c.id === conversationId 
         ? { 
             ...c, 
-            lastMessage: formattedMessage.text, 
+            lastMessage: displayText, 
             unreadCount: c.id !== selectedContact?.id ? (c.unreadCount || 0) + 1 : 0
           }
         : c
@@ -270,14 +321,23 @@ const ChatWidget: React.FC = () => {
       
       const conversationsData: Contact[] = conversationsList.map((conv: any) => {
         const otherMember = conv.members?.find((m: any) => m._id !== currentUserId);
-        const lastMsg = conv.lastMessage?.text || conv.lastMessage || '';
+        
+        // FIX: Chuyển lastMessage thành string
+        let lastMsg = '';
+        if (conv.lastMessage) {
+          if (typeof conv.lastMessage === 'string') {
+            lastMsg = conv.lastMessage;
+          } else if (typeof conv.lastMessage === 'object') {
+            lastMsg = conv.lastMessage.text || conv.lastMessage.content || '';
+          }
+        }
         
         return {
           id: conv._id,
           name: otherMember?.name || 'Người dùng',
           avatar: otherMember?.avatar,
           propertyName: 'Tin nhắn',
-          lastMessage: lastMsg,
+          lastMessage: lastMsg, // ✅ Đảm bảo là string
           unreadCount: conv.unreadCount || 0,
           online: false,
         };
@@ -327,6 +387,7 @@ const ChatWidget: React.FC = () => {
           isEdited: cachedState?.isEdited || msg.isEdited || false,
           isRecalled: cachedState?.isRecalled || msg.isRecalled || false,
           seenBy: msg.seenBy || [],
+          images: msg.images || [],
         };
       });
       
@@ -386,27 +447,50 @@ const ChatWidget: React.FC = () => {
     }
   };
 
-  const handleSendMessage = () => {
-    if (inputValue.trim() === '' || !selectedContact || !socketRef.current) {
-      console.warn('⚠️ Cannot send message:', { 
-        hasInput: inputValue.trim() !== '', 
-        hasContact: !!selectedContact, 
-        hasSocket: !!socketRef.current 
+  // Hàm convert ảnh sang base64
+  const convertImagesToBase64 = async (images: File[]): Promise<string[]> => {
+    const promises = images.map(file => {
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
+    });
+    
+    return Promise.all(promises);
+  };
+
+  // Cập nhật handleSendMessage
+  const handleSendMessage = async (images?: File[]) => {
+    if ((inputValue.trim() === '' && !images) || !selectedContact || !socketRef.current) {
       return;
     }
-
-    // THAY ĐỔI: Sử dụng prefix "temp_" để dễ nhận biết tin nhắn tạm
+  
+    // Convert ảnh sang base64 trước
+    let imageData: string[] = [];
+    if (images && images.length > 0) {
+      try {
+        imageData = await convertImagesToBase64(images);
+        console.log('📤 Sending images:', imageData.length);
+      } catch (error) {
+        console.error('❌ Error converting images:', error);
+        alert('Không thể xử lý ảnh. Vui lòng thử lại!');
+        return;
+      }
+    }
+  
     const tempId = `temp_${Date.now()}`;
     const tempMessage: Message = {
       id: tempId,
-      text: inputValue,
+      text: inputValue || '',
       sender: 'user',
       timestamp: new Date(),
       conversationId: selectedContact.id,
       senderId: currentUserId,
+      images: imageData,
     };
-
+  
     setMessages(prev => [...prev, tempMessage]);
     setConversationsMap(prev => ({
       ...prev,
@@ -414,25 +498,24 @@ const ChatWidget: React.FC = () => {
     }));
     
     setContacts(prev => prev.map(c => 
-      c.id === selectedContact.id ? { ...c, lastMessage: inputValue } : c
+      c.id === selectedContact.id 
+        ? { ...c, lastMessage: inputValue || `📷 ${imageData.length} ảnh` } 
+        : c
     ));
     
     const textToSend = inputValue;
     setInputValue('');
-
+  
     try {
-      const messageData = {
+      socketRef.current.emit('sendMessage', {
         conversationId: selectedContact.id,
         senderId: currentUserId,
         text: textToSend,
-        images: [],
+        images: imageData, // Base64 strings
         files: [],
-      };
-      
-      socketRef.current.emit('sendMessage', messageData);
+      });
     } catch (error) {
       console.error('❌ Error sending message:', error);
-      // Xóa tin nhắn tạm nếu gửi thất bại
       setMessages(prev => prev.filter(m => m.id !== tempId));
       setInputValue(textToSend);
     }

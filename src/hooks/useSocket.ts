@@ -66,6 +66,7 @@ export const useSocket = ({
           isEdited: msg.isEdited || false,
           isRecalled: msg.isRecalled || false,
           seenBy: msg.seenBy || [],
+          images: msg.images || [],
         };
       });
       
@@ -73,6 +74,8 @@ export const useSocket = ({
     });
 
     socket.on('newMessage', (message: any) => {
+      console.log('🖼️ RAW MESSAGE FROM SERVER:', message); // ✅ THÊM DÒNG NÀY
+      console.log('🖼️ IMAGES:', message.images); // ✅ THÊM DÒNG NÀY
       // Lấy senderId từ sender object
       const senderId = message.sender?._id || message.sender?.id || message.senderId;
       
@@ -89,7 +92,9 @@ export const useSocket = ({
         isEdited: message.isEdited || false,
         isRecalled: message.isRecalled || false,
         seenBy: message.seenBy || [],
+        images: message.images || [],
       };
+      console.log('✅ FORMATTED MESSAGE:', newMessage); // ✅ THÊM DÒNG NÀY
       
       onNewMessage(newMessage);
     });
