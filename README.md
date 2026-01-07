@@ -4,7 +4,9 @@ Roomie là website hỗ trợ tìm kiếm phòng trọ, nhà trọ dành cho sin
 Hệ thống được xây dựng theo kiến trúc MERN Stack, cho phép người dùng tìm kiếm, xem chi tiết phòng trọ và liên hệ trực tiếp với chủ trọ.
 
 🌐 Website demo:  
-https://roomie-frontend-ochre.vercel.app/
+https://roomie-frontend-ochre.vercel.app/  
+Tài khoản: gewox19559@nyfhk.com  
+Mật khẩu: 123456
 
 ---
 
@@ -160,6 +162,6 @@ roomie/
 
 ## 👨‍💻 Tác giả
 
-Phùng Gia Long
-Trần Mai Di
-Sinh viên – Trường Đại học Công Nghệ Kỹ thuật TP. Hồ Chí Minh
+Phùng Gia Long  
+Trần Mai Di  
+Sinh viên – Trường Đại học Công nghệ Kỹ thuật TP. Hồ Chí Minh
