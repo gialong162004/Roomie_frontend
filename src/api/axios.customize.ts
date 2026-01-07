@@ -23,16 +23,16 @@ instance.interceptors.response.use(
   function (response) {
     return response?.data ?? response;
   },
-  function (error) {
-    const status = error?.response?.status;
+  // function (error) {
+  //   const status = error?.response?.status;
 
-    // ⚠️ nếu backend trả về 401 (token sai/hết hạn)
-    if (status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error?.response?.data ?? error);
-  }
+  //   // ⚠️ nếu backend trả về 401 (token sai/hết hạn)
+  //   if (status === 401) {
+  //     localStorage.removeItem("token");
+  //     window.location.href = "/login";
+  //   }
+  //   return Promise.reject(error?.response?.data ?? error);
+  // }
 );
 
 export default instance;

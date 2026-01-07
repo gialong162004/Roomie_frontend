@@ -41,6 +41,11 @@ const AppointmentModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
+  // Load notes của cả tháng khi thay đổi tháng/năm
+  useEffect(() => {
+    loadMonthNotes(month, year);
+  }, [month, year]);
+
   // Load notes khi chọn ngày
   useEffect(() => {
     if (selectedDate) {
@@ -52,6 +57,30 @@ const AppointmentModal: React.FC<Props> = ({ isOpen, onClose }) => {
     }
   }, [selectedDate]);
 
+  const loadMonthNotes = async (m: number, y: number) => {
+    try {
+      // Load notes cho tất cả các ngày trong tháng
+      const firstDay = new Date(y, m, 1);
+      const lastDay = new Date(y, m + 1, 0);
+      
+      const allNotes: Note[] = [];
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        try {
+          const date = new Date(y, m, day);
+          const response = await NoteAPI.getNote(date);
+          if (response.data && response.data.items.length > 0) {
+            allNotes.push(response.data);
+          }
+        } catch (err) {
+          // Ngày không có note, bỏ qua
+        }
+      }
+      setNotes(allNotes);
+    } catch (error) {
+      console.error("Error loading month notes:", error);
+    }
+  };
+
   const loadNotesByDate = async (dateStr: string) => {
     try {
       setLoading(true);
@@ -59,13 +88,14 @@ const AppointmentModal: React.FC<Props> = ({ isOpen, onClose }) => {
       const response = await NoteAPI.getNote(date);
       
       if (response.data) {
-        setNotes([response.data]);
-      } else {
-        setNotes([]);
+        // Cập nhật note của ngày được chọn trong danh sách notes
+        setNotes(prevNotes => {
+          const filtered = prevNotes.filter(n => n.date.slice(0, 10) !== dateStr);
+          return [...filtered, response.data];
+        });
       }
     } catch (error) {
       console.error("Error loading notes:", error);
-      setNotes([]);
     } finally {
       setLoading(false);
     }
@@ -77,7 +107,7 @@ const AppointmentModal: React.FC<Props> = ({ isOpen, onClose }) => {
     try {
       setLoading(true);
       const date = new Date(selectedDate);
-      const existingNote = notes.find(n => n.date === selectedDate);
+      const existingNote = notes.find(n => n.date.slice(0, 10) === selectedDate);
       
       if (editingIndex !== null && existingNote && existingNote._id) {
         // Đang ở chế độ sửa
@@ -109,6 +139,7 @@ const AppointmentModal: React.FC<Props> = ({ isOpen, onClose }) => {
       
       setTimeout(() => {
         loadNotesByDate(selectedDate);
+        loadMonthNotes(month, year); // Reload lại notes của tháng
       }, 300);
     } catch (error) {
       console.error("Error adding/updating note:", error);
@@ -143,6 +174,7 @@ const AppointmentModal: React.FC<Props> = ({ isOpen, onClose }) => {
       
       if (selectedDate) {
         await loadNotesByDate(selectedDate);
+        await loadMonthNotes(month, year); // Reload lại notes của tháng
       }
     } catch (error) {
       console.error("Error deleting note item:", error);
@@ -245,7 +277,7 @@ const AppointmentModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <div className="grid grid-cols-7 gap-1">
           {days.map((cell, i) => {
             const dateStr = formatDate(cell.day, cell.monthOffset);
-            const dayNote = notes.find(n => n.date === dateStr);
+            const dayNote = notes.find(n => n.date.slice(0, 10) === dateStr);
             const hasNotes = dayNote && dayNote.items.length > 0;
             const isToday = cell.day === today.getDate() && cell.monthOffset === 0 && month === today.getMonth() && year === today.getFullYear();
             const isSelected = selectedDate === dateStr;

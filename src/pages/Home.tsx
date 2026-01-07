@@ -1,12 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RoomList from "../components/rooms/RoomList";
 import SearchBar from "../components/layouts/SearchBar";
-import RoomCard from "../components/rooms/RoomCard";
 
 export default function Home() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSearch = (searchData: any) => {
     console.log("Dữ liệu tìm kiếm:", searchData);
@@ -15,7 +13,6 @@ export default function Home() {
   const handleSearchResults = (results: any[]) => {
     setSearchResults(results);
     setIsSearchMode(true);
-    setIsLoading(false);
   };
 
   const handleResetSearch = () => {
@@ -33,11 +30,9 @@ export default function Home() {
             alt="Luxury apartment"
             className="w-full h-full object-cover"
           />
-          {/* Overlay gradient */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/10"></div>
         </div>
 
-        {/* Text content */}
         <div className="absolute inset-0 flex flex-col justify-center items-center text-center text-white z-10 px-4">
           <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
             Tìm căn hộ mơ ước của bạn
@@ -79,45 +74,11 @@ export default function Home() {
           </h2>
         )}
 
-        {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">Đang tìm kiếm...</p>
-          </div>
-        ) : isSearchMode ? (
-          searchResults.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {searchResults.map((post) => (
-                <RoomCard
-                  key={post._id}
-                  _id={post._id}
-                  image={
-                    post.images?.[0] ||
-                    "https://visaho.vn/upload_images/images/2022/04/01/phan-loai-can-ho-chung-cu-7.jpg"
-                  }
-                  type={post.title}
-                  area={post.superficies ? `${post.superficies} m²` : "-- m²"}
-                  address={`${post.district}, ${post.city}`}
-                  price={post.price.toLocaleString()}
-                  badge={post.category?.name || "Đã duyệt"}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600 text-lg mb-4">
-                Không tìm thấy phòng trọ phù hợp
-              </p>
-              <button
-                onClick={handleResetSearch}
-                className="text-teal-600 hover:text-teal-700 font-medium underline"
-              >
-                Xem tất cả phòng
-              </button>
-            </div>
-          )
-        ) : (
-          <RoomList />
-        )}
+        {/* Chỉ render RoomList và truyền props */}
+        <RoomList 
+          searchResults={searchResults}
+          isSearchMode={isSearchMode}
+        />
       </main>
     </div>
   );

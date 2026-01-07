@@ -29,9 +29,17 @@ interface RoomDetailType {
   superficies?: number;
 }
 
+interface RoomListProps {
+  searchResults?: any[];
+  isSearchMode?: boolean;
+}
+
 const ITEMS_PER_PAGE = 6;
 
-const RoomList: React.FC = () => {
+const RoomList: React.FC<RoomListProps> = ({ 
+  searchResults = [], 
+  isSearchMode = false 
+}) => {
   const [rooms, setRooms] = useState<RoomCardType[]>([]);
   const [displayedRooms, setDisplayedRooms] = useState<RoomCardType[]>([]);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -58,35 +66,60 @@ const RoomList: React.FC = () => {
     fetchFavorites();
   }, []);
 
-  // Lấy danh sách phòng
+  // Lấy danh sách phòng (hoặc sử dụng search results)
   useEffect(() => {
-    const fetchRooms = async () => {
-      try {
-        setLoading(true);
-        const res = await PostAPI.getPost() as any;
-        const roomsData: RoomCardType[] = (res.content || []).map((post: any) => ({
-          _id: post._id,
-          image: post.images[0] || "https://visaho.vn/upload_images/images/2022/04/01/phan-loai-can-ho-chung-cu-7.jpg",
-          type: post.title,
-          area: `${post.superficies ?? "--"} m²`,
-          address: `${post.district}, ${post.city}`,
-          rooms: 1,
-          price: post.price.toLocaleString(),
-          badge: post.category?.name || "Đã duyệt",
-        }));
-        
-        setRooms(roomsData);
-        setTotalPages(Math.ceil(roomsData.length / ITEMS_PER_PAGE));
-        setDisplayedRooms(roomsData.slice(0, ITEMS_PER_PAGE));
-      } catch (err: any) {
-        setError(err.message || "Lỗi khi lấy dữ liệu");
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Nếu đang ở search mode và có kết quả search
+    if (isSearchMode && searchResults.length >= 0) {
+      const searchRoomsData: RoomCardType[] = searchResults.map((post: any) => ({
+        _id: post._id,
+        image: post.images?.[0] || "https://visaho.vn/upload_images/images/2022/04/01/phan-loai-can-ho-chung-cu-7.jpg",
+        type: post.title,
+        area: post.superficies ? `${post.superficies} m²` : "-- m²",
+        address: `${post.district}, ${post.city}`,
+        rooms: 1,
+        price: post.price.toLocaleString(),
+        badge: post.category?.name || "Đã duyệt",
+      }));
+      
+      setRooms(searchRoomsData);
+      setTotalPages(Math.ceil(searchRoomsData.length / ITEMS_PER_PAGE));
+      setDisplayedRooms(searchRoomsData.slice(0, ITEMS_PER_PAGE));
+      setCurrentPage(1);
+      setLoading(false);
+      return;
+    }
 
-    fetchRooms();
-  }, []);
+    // Nếu không phải search mode, fetch tất cả phòng
+    if (!isSearchMode) {
+      const fetchRooms = async () => {
+        try {
+          setLoading(true);
+          const res = await PostAPI.getPost() as any;
+          const roomsData: RoomCardType[] = (res.content || []).map((post: any) => ({
+            _id: post._id,
+            image: post.images[0] || "https://visaho.vn/upload_images/images/2022/04/01/phan-loai-can-ho-chung-cu-7.jpg",
+            type: post.title,
+            area: `${post.superficies ?? "--"} m²`,
+            address: `${post.district}, ${post.city}`,
+            rooms: 1,
+            price: post.price.toLocaleString(),
+            badge: post.category?.name || "Đã duyệt",
+          }));
+          
+          setRooms(roomsData);
+          setTotalPages(Math.ceil(roomsData.length / ITEMS_PER_PAGE));
+          setDisplayedRooms(roomsData.slice(0, ITEMS_PER_PAGE));
+          setCurrentPage(1);
+        } catch (err: any) {
+          setError(err.message || "Lỗi khi lấy dữ liệu");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchRooms();
+    }
+  }, [isSearchMode, searchResults]);
 
   // Lấy chi tiết phòng khi nhấn
   useEffect(() => {
@@ -94,14 +127,11 @@ const RoomList: React.FC = () => {
 
     const fetchRoomDetail = async () => {
       try {
-        setLoading(true);
         const res = await PostAPI.getPostDetail(selectedPostId) as any;
         setSelectedRoom(res);
         console.log("selectRoom: ", res);
       } catch (err: any) {
         setError(err.message || "Lỗi khi lấy dữ liệu chi tiết");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -169,6 +199,15 @@ const RoomList: React.FC = () => {
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
           {error}
+        </div>
+      )}
+
+      {/* Hiển thị khi search không có kết quả */}
+      {!loading && isSearchMode && rooms.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-gray-600 text-lg mb-4">
+            Không tìm thấy phòng trọ phù hợp
+          </p>
         </div>
       )}
 
@@ -249,7 +288,7 @@ const RoomList: React.FC = () => {
         </div>
       )}
 
-      {!loading && !error && rooms.length === 0 && (
+      {!loading && !error && !isSearchMode && rooms.length === 0 && (
         <div className="text-center py-12">
           <svg className="mx-auto h-12 w-12 text-textGray" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
