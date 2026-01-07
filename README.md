@@ -84,17 +84,18 @@ MongoDB
 
 ### Clone project
 
-
+```bash
 git clone <repository-url>
 cd roomie
+```
 
 
 ### Cấu hình Backend
 
-
+```bash
 cd backend
 npm install
-
+```
 
 Tạo file `.env`:
 
@@ -106,17 +107,17 @@ JWT_SECRET=your_jwt_secret
 
 Chạy backend:
 
-
+```bash
 npm run dev
-
+```
 
 ### Cấu hình Frontend
 
-
+```bash
 cd ../frontend
 npm install
 npm run dev
-
+```
 
 Truy cập:
 
@@ -129,7 +130,7 @@ http://localhost:5173
 ## 📁 Cấu trúc thư mục
 
 
-
+```bash
 roomie/
 ├── backend/
 │ ├── controllers/
@@ -145,7 +146,7 @@ roomie/
 │ │ ├── services/
 │ │ └── App.tsx
 │ └── vite.config.ts
-
+```
 
 ---
 
