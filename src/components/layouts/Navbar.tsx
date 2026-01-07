@@ -93,7 +93,7 @@ const Navbar = () => {
         {/* Desktop Menu */}
         <ul className="hidden md:flex gap-10 text-textDark font-medium uppercase tracking-wide items-center">
           <li><Link to="/" className="hover:text-primary">Trang chủ</Link></li>
-          <li><Link to="/rooms" className="hover:text-primary">Phòng trọ</Link></li>
+          <li><Link to="/map" className="hover:text-primary">Bản đồ</Link></li>
           <li><Link to="/about" className="hover:text-primary">Giới thiệu</Link></li>
 
           {user ? (

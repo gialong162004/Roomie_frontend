@@ -7,6 +7,7 @@ import VerifyOTP from "./pages/VerifyOTP";
 import ProfilePage from "./pages/Profile";
 import SavedPostsPage from "./components/posts/savedPost";
 import IntroPage from "./pages/Intro";
+import MapSearchRadius from "./pages/MapSearchRadius";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="saved-posts" element={<SavedPostsPage />} />
         <Route path="about" element={<IntroPage />} />
+        <Route path="map" element={<MapSearchRadius />} />
       </Route>
       <Route path="login" element={<Login />} />
       <Route path="register" element={<Register />} />
