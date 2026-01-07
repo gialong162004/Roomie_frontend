@@ -99,10 +99,11 @@ npm install
 
 Tạo file `.env`:
 
-
+```bash
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
+```
 
 
 Chạy backend:
@@ -159,5 +160,6 @@ roomie/
 
 ## 👨‍💻 Tác giả
 
-Phung Long  
-Sinh viên – Trường Đại học Sư phạm Kỹ thuật TP. Hồ Chí Minh
+Phùng Gia Long
+Trần Mai Di
+Sinh viên – Trường Đại học Công Nghệ Kỹ thuật TP. Hồ Chí Minh
