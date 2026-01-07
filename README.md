@@ -1,73 +1,162 @@
-# React + TypeScript + Vite
+# 🏠 ROOMIE – Website hỗ trợ tìm kiếm phòng trọ (MERN Stack)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Roomie là website hỗ trợ tìm kiếm phòng trọ, nhà trọ dành cho sinh viên và người đi làm.  
+Hệ thống được xây dựng theo kiến trúc MERN Stack, cho phép người dùng tìm kiếm, xem chi tiết phòng trọ và liên hệ trực tiếp với chủ trọ.
 
-Currently, two official plugins are available:
+🌐 Website demo:  
+https://roomie-frontend-ochre.vercel.app/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 🎯 Mục tiêu đề tài
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Xây dựng website hỗ trợ tìm kiếm phòng trọ trực tuyến
+- Giúp người thuê phòng tiếp cận thông tin phòng trọ nhanh chóng và chính xác
+- Hỗ trợ chủ trọ đăng tin và quản lý phòng cho thuê
+- Áp dụng kiến thức MERN Stack vào một sản phẩm thực tế
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🧩 Công nghệ sử dụng
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Frontend
+- ReactJS
+- TypeScript
+- Vite
+- Tailwind CSS
+- Axios
+- React Router
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Backend
+- Node.js
+- Express.js
+- RESTful API
+- JWT Authentication
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Database
+- MongoDB
+- Mongoose
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Triển khai
+- Frontend: Vercel
+- Backend: Render
+- Database: MongoDB Atlas
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## ✨ Chức năng chính
+
+### Người dùng
+- Đăng ký / Đăng nhập tài khoản
+- Tìm kiếm phòng trọ theo vị trí, giá tiền, loại phòng
+- Xem chi tiết phòng trọ (hình ảnh, mô tả, giá, tiện ích)
+- Liên hệ trực tiếp với chủ trọ
+- Lưu phòng trọ yêu thích
+
+### Chủ trọ
+- Đăng tin phòng trọ
+- Chỉnh sửa tin đăng
+- Xóa tin đăng
+- Quản lý danh sách phòng trọ
+
+---
+
+## 🏗️ Kiến trúc hệ thống
+
+Frontend (React + Vite)
+|
+| RESTful API
+|
+Backend (Node.js + Express)
+|
+|
+MongoDB
+
+
+---
+
+## 🚀 Hướng dẫn chạy dự án (Local)
+
+### Yêu cầu hệ thống
+- Node.js >= 18
+- npm hoặc yarn
+- MongoDB (local hoặc MongoDB Atlas)
+
+### Clone project
+
+
+git clone <repository-url>
+cd roomie
+
+
+### Cấu hình Backend
+
+
+cd backend
+npm install
+
+
+Tạo file `.env`:
+
+
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+
+
+Chạy backend:
+
+
+npm run dev
+
+
+### Cấu hình Frontend
+
+
+cd ../frontend
+npm install
+npm run dev
+
+
+Truy cập:
+
+
+http://localhost:5173
+
+
+---
+
+## 📁 Cấu trúc thư mục
+
+
+
+roomie/
+├── backend/
+│ ├── controllers/
+│ ├── models/
+│ ├── routes/
+│ ├── middlewares/
+│ └── server.js
+│
+├── frontend/
+│ ├── src/
+│ │ ├── components/
+│ │ ├── pages/
+│ │ ├── services/
+│ │ └── App.tsx
+│ └── vite.config.ts
+
+
+---
+
+## 📌 Ghi chú
+
+- Dự án được thực hiện phục vụ tiểu luận / học phần chuyên ngành
+- Website vẫn đang trong quá trình hoàn thiện và phát triển thêm tính năng
+
+---
+
+## 👨‍💻 Tác giả
+
+Phung Long  
+Sinh viên – Trường Đại học Sư phạm Kỹ thuật TP. Hồ Chí Minh
