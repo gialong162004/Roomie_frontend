@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Home, Search, Shield, Clock, MapPin, Heart, Users, Star } from 'lucide-react';
 
 const IntroPage = () => {

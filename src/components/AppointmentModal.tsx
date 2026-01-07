@@ -60,7 +60,6 @@ const AppointmentModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const loadMonthNotes = async (m: number, y: number) => {
     try {
       // Load notes cho tất cả các ngày trong tháng
-      const firstDay = new Date(y, m, 1);
       const lastDay = new Date(y, m + 1, 0);
       
       const allNotes: Note[] = [];

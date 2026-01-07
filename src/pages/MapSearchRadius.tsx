@@ -25,11 +25,9 @@ const MapSearchRadius = () => {
   const [allRooms, setAllRooms] = useState<Room[]>([]);
   const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [isLoadingRooms, setIsLoadingRooms] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [showRoomDetail, setShowRoomDetail] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('map');
-  const [searchCenter, setSearchCenter] = useState({ lat: 10.8231, lng: 106.6297 }); // Mặc định TP.HCM
 
   // Mock data cho demo
   useEffect(() => {
