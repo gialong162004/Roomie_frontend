@@ -85,7 +85,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
   const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex justify-center items-start overflow-auto z-50 p-4">
+    <div className="fixed inset-0 z-[9999] bg-black/50 flex justify-center items-start overflow-auto p-4">
       <div className="bg-white rounded-2xl shadow-lg max-w-3xl w-full relative my-8">
         <button
           onClick={onClose}

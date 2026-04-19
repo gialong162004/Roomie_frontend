@@ -1,13 +1,14 @@
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "./components/layouts/MainLayout";
-import Home from "./pages/Home";
+import Home from "./pages/HomeNew";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyOTP from "./pages/VerifyOTP";
 import ProfilePage from "./pages/Profile";
 import SavedPostsPage from "./components/posts/savedPost";
 import IntroPage from "./pages/Intro";
-import MapSearchRadius from "./pages/MapSearchRadius";
+import PricingPage from "./pages/PricingPage";
+import MapSearchRadius from "./pages/MapSearchRadius/MapSearchRadius";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="saved-posts" element={<SavedPostsPage />} />
         <Route path="about" element={<IntroPage />} />
+        <Route path="pricing" element={<PricingPage />} />
         <Route path="map" element={<MapSearchRadius />} />
       </Route>
       <Route path="login" element={<Login />} />

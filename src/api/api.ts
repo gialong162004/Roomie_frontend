@@ -121,6 +121,9 @@ const getAllNotifications = () => {
 const searchPosts = (filter: searchFilter) => {
   return axios.get("/api/posts/search", { params: filter });
 };
+const getNearbyPosts = (params: { lat: number; lng: number; maxDistance: number; page?: number; limit?: number }) => {
+  return axios.get("/api/posts/nearby", { params });
+};
 const createNewNotifications = () => {
   return axios.post("/api/notifications");
 };
@@ -133,12 +136,19 @@ const readAllNotifications = (userId: string) => {
 const deleteNotifications = (notificationId: string) => {
   return axios.delete(`/api/notifications/${notificationId}`);
 };
+const getAllPackages = () => {
+  return axios.get("/api/subscriptions/packages");
+}
+const paySubscription = (packageId: string) => {
+  return axios.post("/api/subscriptions/zalo/create", { packageId });
+}
 
 export const AuthAPI = { register, verifyRegister, login, getProfile };
 export const PostAPI = { getPostDetail, getPost, createPost, getCategory, getMyPost, deletePost, updatePost, getUserPost, getFavoritePosts, 
-  addFavoritePost, removeFavoritePost, searchPosts };
+  addFavoritePost, removeFavoritePost, searchPosts, getNearbyPosts };
 export const UserAPI = { getProfile, updateProfile, updateAvatar, getPublicProfile };
 export const MessageAPI = { getConversation, createConversation, deleteConversation, getMessages };
 export const NoteAPI = { createNote, updateNote, getNote, deleteNote };
 export const NotificationAPI = { getAllNotifications, createNewNotifications, readNotifications, readAllNotifications,
   deleteNotifications };
+export const SubscriptionAPI = { getAllPackages, paySubscription };
