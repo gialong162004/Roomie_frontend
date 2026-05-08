@@ -3,37 +3,9 @@ import './MapSearchRadius.css';
 import { PostAPI } from '../../api/api';
 import RoomCardHome from '../../components/rooms/RoomCardHome';
 import RoomDetail from '../../components/rooms/RoomDetail';
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Fix leaflet default icon bị mất khi dùng với Vite/Webpack
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
-
-const activeIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-  iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const defaultIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import type { StyleSpecification } from 'maplibre-gl';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -74,6 +46,8 @@ interface RoomApiItem {
   latitude?: number | string;
   longitude?: number | string;
   location?: {
+    type?: string;
+    coordinates?: number[];
     lat?: number | string;
     lon?: number | string;
     lng?: number | string;
@@ -100,6 +74,14 @@ function getRoomAddress(room: Room): string {
 }
 
 function extractCoords(room: RoomApiItem): Coords | null {
+  const geoCoords = (room.location as any)?.coordinates;
+  if (Array.isArray(geoCoords) && geoCoords.length >= 2) {
+    const lngNum = Number(geoCoords[0]);
+    const latNum = Number(geoCoords[1]);
+    if (Number.isFinite(latNum) && Number.isFinite(lngNum)) {
+      return { lat: latNum, lng: lngNum };
+    }
+  }
   const lat = room.lat ?? room.latitude ?? room.location?.lat ?? room.location?.latitude;
   const lng = room.lng ?? room.lon ?? room.longitude ?? room.location?.lng ?? room.location?.lon ?? room.location?.longitude;
   const latNum = lat !== undefined ? Number(lat) : NaN;
@@ -139,43 +121,12 @@ function haversineDistanceKm(from: Coords, to: Coords): number {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-async function filterRoomsByDistance(
-  center: Coords,
-  sourceRooms: Room[],
-  maxRadiusKm: number,
-  geocode: (query: string) => Promise<Coords | null>
-): Promise<{
-  filtered: Room[];
-  distanceMap: Record<string, number>;
-  coordsMap: Record<string, Coords>;
-}> {
-  const distanceMap: Record<string, number> = {};
+function buildCoordsMap(sourceRooms: Room[]): Record<string, Coords> {
   const coordsMap: Record<string, Coords> = {};
-  const filtered: Room[] = [];
-
   for (const room of sourceRooms) {
-    // Ưu tiên coords có sẵn trong room, sau đó geocode nếu chưa có
-    let coords = room.coords ?? null;
-    if (!coords) {
-      coords = await geocode(`${getRoomAddress(room)}, Việt Nam`);
-    }
-    if (!coords) continue;
-
-    // Tính khoảng cách: dùng distance từ API (m) nếu có, không thì tính Haversine
-    const distanceKm =
-      room.distance !== undefined
-        ? room.distance / 1000
-        : haversineDistanceKm(center, coords);
-
-    if (distanceKm <= maxRadiusKm) {
-      distanceMap[room._id] = distanceKm;
-      coordsMap[room._id] = coords;          // ← luôn lưu coords dù distance từ API
-      filtered.push({ ...room, coords });
-    }
+    if (room.coords) coordsMap[room._id] = room.coords;
   }
-
-  filtered.sort((a, b) => (distanceMap[a._id] ?? 0) - (distanceMap[b._id] ?? 0));
-  return { filtered, distanceMap, coordsMap };
+  return coordsMap;
 }
 
 function getBrowserLocation(): Promise<Coords> {
@@ -187,31 +138,6 @@ function getBrowserLocation(): Promise<Coords> {
       { enableHighAccuracy: true, timeout: 8000 }
     );
   });
-}
-
-// ─── MapController ────────────────────────────────────────────────────────────
-
-function MapController({
-  center,
-  activeCoords,
-  radiusKm,
-}: {
-  center: Coords | null;
-  activeCoords: Coords | null;
-  radiusKm: number;
-}) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (activeCoords) {
-      map.setView([activeCoords.lat, activeCoords.lng], 16, { animate: true });
-    } else if (center) {
-      const bounds = L.latLng(center.lat, center.lng).toBounds(radiusKm * 1000 * 2);
-      map.fitBounds(bounds, { animate: true, padding: [32, 32] });
-    }
-  }, [activeCoords, center, radiusKm]);
-
-  return null;
 }
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
@@ -228,6 +154,10 @@ const SearchIcon = ({ size = 14 }) => (
   </svg>
 );
 
+const MAPTILER_KEY = import.meta.env.VITE_APIMAP_KEY as string;
+const mapStyle = `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`;
+const DEFAULT_CENTER: Coords = { lat: 10.8512, lng: 106.7716 };
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function MapSearchRadius() {
@@ -243,12 +173,224 @@ export default function MapSearchRadius() {
   const [coordsByRoomId, setCoordsByRoomId] = useState<Record<string, Coords>>({});
   const [mapCenter, setMapCenter] = useState<Coords | null>(null);
 
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<Record<string, maplibregl.Marker>>({});
+  const circleRef = useRef<boolean>(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const geocodeCacheRef = useRef<Map<string, Coords | null>>(new Map());
   const lastCenterRef = useRef<{ coords: Coords; label: string } | null>(null);
+  const allRoomsRef = useRef<Room[]>([]);
 
-  // Load tất cả phòng lúc mount (không cần dữ liệu giả)
+  // ── Init MapLibre ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: mapStyle, // Sử dụng biến mapStyle vừa sửa ở Bước 1
+      center: [DEFAULT_CENTER.lng, DEFAULT_CENTER.lat],
+      zoom: 12,
+    });
+
+    // Thêm nút điều hướng (phóng to/thu nhỏ)
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // ── Vẽ/xóa circle bán kính ────────────────────────────────────────────────
+  const drawCircle = useCallback((center: Coords, radiusKm: number) => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    const sourceId = 'radius-circle';
+    const layerFillId = 'radius-fill';
+    const layerBorderId = 'radius-border';
+
+    // Tạo GeoJSON circle
+    const points = 64;
+    const coords: [number, number][] = [];
+    for (let i = 0; i < points; i++) {
+      const angle = (i / points) * 2 * Math.PI;
+      const dx = (radiusKm / 111.32) * Math.cos(angle);
+      const dy = (radiusKm / (111.32 * Math.cos(center.lat * Math.PI / 180))) * Math.sin(angle);
+      coords.push([center.lng + dy, center.lat + dx]);
+    }
+    coords.push(coords[0]);
+
+    const geojson: GeoJSON.Feature<GeoJSON.Polygon> = {
+      type: 'Feature',
+      properties: {},
+      geometry: { type: 'Polygon', coordinates: [coords] },
+    };
+
+    if (map.getSource(sourceId)) {
+      (map.getSource(sourceId) as maplibregl.GeoJSONSource).setData(geojson);
+    } else {
+      map.addSource(sourceId, { type: 'geojson', data: geojson });
+      map.addLayer({
+        id: layerFillId,
+        type: 'fill',
+        source: sourceId,
+        paint: { 'fill-color': '#14B8A6', 'fill-opacity': 0.08 },
+      });
+      map.addLayer({
+        id: layerBorderId,
+        type: 'line',
+        source: sourceId,
+        paint: { 'line-color': '#14B8A6', 'line-width': 2, 'line-dasharray': [6, 4] },
+      });
+      circleRef.current = true;
+    }
+  }, []);
+
+  // ── Cập nhật markers trên map ──────────────────────────────────────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const updateMarkers = () => {
+      // Xóa marker cũ không còn trong danh sách
+      Object.keys(markersRef.current).forEach((id) => {
+        if (!coordsByRoomId[id]) {
+          markersRef.current[id].remove();
+          delete markersRef.current[id];
+        }
+      });
+
+      // Thêm/cập nhật marker
+      rooms.forEach((room) => {
+        const coords = coordsByRoomId[room._id];
+        if (!coords) return;
+
+        const isActive = active === room._id;
+
+        if (markersRef.current[room._id]) {
+          // Cập nhật màu marker nếu active thay đổi
+          const el = markersRef.current[room._id].getElement();
+          el.style.filter = isActive
+            ? 'hue-rotate(140deg) saturate(2)'
+            : '';
+          return;
+        }
+
+        // Tạo marker element
+        const el = document.createElement('div');
+        el.style.cssText = `
+          width: 28px; height: 28px; border-radius: 50% 50% 50% 0;
+          background: ${isActive ? '#ef4444' : '#14B8A6'};
+          border: 2px solid #fff;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          cursor: pointer;
+          transform: rotate(-45deg);
+          transition: background 0.2s;
+        `;
+
+        // Popup
+        const distKm = distanceByRoomId[room._id];
+        const popup = new maplibregl.Popup({
+          offset: 25,
+          closeButton: true,
+          maxWidth: '240px',
+        }).setHTML(`
+          <div style="font-family:inherit;padding:4px">
+            ${room.images?.[0] ? `<img src="${room.images[0]}" alt="${room.title}"
+              style="width:100%;height:90px;object-fit:cover;border-radius:6px;margin-bottom:8px;display:block"/>` : ''}
+            <div style="font-weight:700;font-size:13px;margin-bottom:3px;line-height:1.3">${room.title}</div>
+            <div style="font-size:11px;color:#64748b;margin-bottom:6px">📍 ${room.district}, ${room.city}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f1f5f9;padding-top:6px">
+              <span style="font-weight:700;color:#0D9488;font-size:13px">
+                ${formatPrice(room.price)}
+                <span style="font-weight:400;color:#94a3b8;font-size:11px">/tháng</span>
+              </span>
+              ${distKm !== undefined ? `<span style="font-size:11px;color:#fff;background:#14B8A6;border-radius:20px;padding:2px 7px">${formatDistance(distKm)}</span>` : ''}
+            </div>
+            ${room.superficies ? `<div style="font-size:11px;color:#94a3b8;margin-top:4px">📐 ${room.superficies} m²</div>` : ''}
+          </div>
+        `);
+
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([coords.lng, coords.lat])
+          .setPopup(popup)
+          .addTo(map);
+
+        el.addEventListener('click', () => {
+          setActive(room._id);
+          cardRefs.current[room._id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+
+        markersRef.current[room._id] = marker;
+      });
+    };
+
+    if (map.isStyleLoaded()) {
+      updateMarkers();
+    } else {
+      map.once('load', updateMarkers);
+    }
+  }, [rooms, coordsByRoomId, active, distanceByRoomId]);
+
+  // ── Fly to khi chọn room ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!active || !mapRef.current) return;
+    const coords = coordsByRoomId[active];
+    if (coords) {
+      mapRef.current.flyTo({ center: [coords.lng, coords.lat], zoom: 16, duration: 800 });
+    }
+  }, [active, coordsByRoomId]);
+
+  // ── Fit bounds khi mapCenter thay đổi ────────────────────────────────────
+  useEffect(() => {
+    if (!mapCenter || !mapRef.current) return;
+    const map = mapRef.current;
+    const km = radius;
+    const delta = km / 111.32;
+    const bounds: maplibregl.LngLatBoundsLike = [
+      [mapCenter.lng - delta, mapCenter.lat - delta],
+      [mapCenter.lng + delta, mapCenter.lat + delta],
+    ];
+
+    const fitOrDraw = () => {
+      map.fitBounds(bounds, { padding: 40, duration: 600 });
+      drawCircle(mapCenter, km);
+    };
+
+    if (map.isStyleLoaded()) {
+      fitOrDraw();
+    } else {
+      map.once('load', fitOrDraw);
+    }
+  }, [mapCenter, radius, drawCircle]);
+
+  // ── geocodeAddress ─────────────────────────────────────────────────────────
+  const geocodeAddress = useCallback(async (query: string): Promise<Coords | null> => {
+    try {
+      const resp = await fetch(
+        `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?key=${MAPTILER_KEY}`
+      );
+      const data = await resp.json();
+      
+      // MapTiler trả về tọa độ trong feature.center [lng, lat]
+      const feature = data?.features?.[0];
+      if (!feature) return null;
+
+      return {
+        lng: feature.center[0],
+        lat: feature.center[1],
+      };
+    } catch (error) {
+      console.error("Lỗi tìm kiếm tọa độ:", error);
+      return null;
+    }
+  }, []);
+
+  // ── fetchRooms ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -263,34 +405,29 @@ export default function MapSearchRadius() {
           .map((p: RoomApiItem) => normalizeRoom(p));
         setAllRooms(mapped);
         setRooms(mapped);
+        allRoomsRef.current = mapped;
+
+        const initialCoordsMap = buildCoordsMap(mapped);
+        setCoordsByRoomId(initialCoordsMap);
+
+        const roomsNeedGeocode = mapped.filter((r: Room) => !initialCoordsMap[r._id]);
+        if (roomsNeedGeocode.length > 0) {
+          const extraCoordsMap: Record<string, Coords> = { ...initialCoordsMap };
+          for (const room of roomsNeedGeocode) {
+            const coords = await geocodeAddress(`${getRoomAddress(room)}, Việt Nam`);
+            if (coords) extraCoordsMap[room._id] = coords;
+          }
+          setCoordsByRoomId({ ...extraCoordsMap });
+        }
+        setDistanceByRoomId({});
       } catch (err) {
         console.error('[fetchRooms]', err);
       }
     };
     fetchRooms();
-  }, []);
+  }, [geocodeAddress]);
 
-  const geocodeAddress = useCallback(async (query: string): Promise<Coords | null> => {
-    const key = query.trim().toLowerCase();
-    if (!key) return null;
-    if (geocodeCacheRef.current.has(key)) return geocodeCacheRef.current.get(key) ?? null;
-    try {
-      const resp = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`
-      );
-      if (!resp.ok) { geocodeCacheRef.current.set(key, null); return null; }
-      const data = (await resp.json()) as Array<{ lat: string; lon: string }>;
-      if (!data.length) { geocodeCacheRef.current.set(key, null); return null; }
-      const coords = { lat: Number(data[0].lat), lng: Number(data[0].lon) };
-      if (isNaN(coords.lat) || isNaN(coords.lng)) { geocodeCacheRef.current.set(key, null); return null; }
-      geocodeCacheRef.current.set(key, coords);
-      return coords;
-    } catch {
-      geocodeCacheRef.current.set(key, null);
-      return null;
-    }
-  }, []);
-
+  // ── searchWithCenter ───────────────────────────────────────────────────────
   const searchWithCenter = useCallback(async (
     center: Coords,
     label: string,
@@ -328,14 +465,35 @@ export default function MapSearchRadius() {
         return;
       }
 
-      const { filtered, distanceMap, coordsMap } = await filterRoomsByDistance(
-        center, mapped, radius, geocodeAddress
-      );
-
       setAllRooms(mapped);
-      setRooms(filtered);
+      setRooms(mapped);
+
+      const distanceMap: Record<string, number> = {};
+      const coordsMap: Record<string, Coords> = {};
+
+      for (const room of mapped) {
+        const cachedRoom = allRoomsRef.current.find(r => r._id === room._id);
+        let coords = room.coords ?? cachedRoom?.coords ?? null;
+        if (!coords) {
+          coords = await geocodeAddress(`${getRoomAddress(room)}, Việt Nam`);
+        }
+        if (coords) coordsMap[room._id] = coords;
+
+        let distanceKm: number | null = null;
+        if (room.distance !== undefined && room.distance !== null) {
+          const raw = Number(room.distance);
+          if (Number.isFinite(raw)) distanceKm = raw > 50 ? raw / 1000 : raw;
+        }
+        if (distanceKm === null && coords) distanceKm = haversineDistanceKm(center, coords);
+        if (distanceKm !== null && Number.isFinite(distanceKm)) distanceMap[room._id] = distanceKm;
+      }
+
+      const sorted = [...mapped].sort(
+        (a, b) => (distanceMap[a._id] ?? Infinity) - (distanceMap[b._id] ?? Infinity)
+      );
+      setRooms(sorted);
       setDistanceByRoomId(distanceMap);
-      setCoordsByRoomId(coordsMap);
+      setCoordsByRoomId(prev => ({ ...prev, ...coordsMap }));
       if (rememberCenter) lastCenterRef.current = { coords: center, label };
     } catch (err) {
       console.error('[searchWithCenter]', err);
@@ -353,11 +511,10 @@ export default function MapSearchRadius() {
       } else {
         setRooms(allRooms);
         setDistanceByRoomId({});
-        setCoordsByRoomId({});
+        setCoordsByRoomId(buildCoordsMap(allRooms));
       }
       return;
     }
-
     const alreadyHasVN = /việt\s*nam/i.test(keyword);
     const cleanedQuery = (alreadyHasVN ? keyword : `${keyword}, Việt Nam`)
       .replace(/\bĐ\.\s*/gi, 'Đường ')
@@ -388,7 +545,6 @@ export default function MapSearchRadius() {
     }
   };
 
-  // Khi radius thay đổi, search lại với center cũ
   useEffect(() => {
     if (!lastCenterRef.current) return;
     void searchWithCenter(lastCenterRef.current.coords, lastCenterRef.current.label, false);
@@ -398,9 +554,6 @@ export default function MapSearchRadius() {
     setActive(roomId);
     cardRefs.current[roomId]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
-
-  const activeCoords = active ? (coordsByRoomId[active] ?? null) : null;
-  const defaultCenter: Coords = mapCenter ?? { lat: 10.8512, lng: 106.7716 };
 
   return (
     <>
@@ -448,69 +601,7 @@ export default function MapSearchRadius() {
 
           {/* MAP */}
           <div className="map-pane">
-            <MapContainer
-              center={[defaultCenter.lat, defaultCenter.lng]}
-              zoom={13}
-              style={{ width: '100%', height: '100%' }}
-              scrollWheelZoom
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <MapController center={mapCenter} activeCoords={activeCoords} radiusKm={radius} />
-
-              {mapCenter && (
-                <Circle
-                  center={[mapCenter.lat, mapCenter.lng]}
-                  radius={radius * 1000}
-                  pathOptions={{
-                    color: '#14B8A6',
-                    fillColor: '#14B8A6',
-                    fillOpacity: 0.08,
-                    weight: 2,
-                    dashArray: '6 4',
-                  }}
-                />
-              )}
-
-              {/* Markers: dùng coordsByRoomId (đã geocode + distance filter) */}
-              {rooms.map((room) => {
-                const coords = coordsByRoomId[room._id];
-                if (!coords) return null;
-                return (
-                  <Marker
-                    key={room._id}
-                    position={[coords.lat, coords.lng]}
-                    icon={active === room._id ? activeIcon : defaultIcon}
-                    eventHandlers={{ click: () => handleSelectRoom(room._id) }}
-                  >
-                    <Popup>
-                      <div style={{ minWidth: 180 }}>
-                        {room.images?.[0] && (
-                          <img
-                            src={room.images[0]}
-                            alt={room.title}
-                            style={{ width: '100%', height: 90, objectFit: 'cover', borderRadius: 6, marginBottom: 6 }}
-                          />
-                        )}
-                        <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{room.title}</div>
-                        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>{room.district}, {room.city}</div>
-                        <div style={{ fontWeight: 700, color: '#0D9488', fontSize: 13 }}>
-                          {formatPrice(room.price)}
-                          <span style={{ fontWeight: 400, color: '#94a3b8' }}>/tháng</span>
-                        </div>
-                        {distanceByRoomId[room._id] !== undefined && (
-                          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
-                            📍 {formatDistance(distanceByRoomId[room._id])}
-                          </div>
-                        )}
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
-            </MapContainer>
+            <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
           </div>
 
           {/* LIST */}
@@ -576,6 +667,7 @@ export default function MapSearchRadius() {
       {/* Detail overlay */}
       {modal && (
         <RoomDetail
+          postId={modal._id}
           images={modal.images?.length ? modal.images : ['https://via.placeholder.com/800x400?text=No+Image']}
           type={modal.title}
           area={modal.superficies ? `${modal.superficies} m²` : undefined}

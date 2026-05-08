@@ -1,8 +1,10 @@
 import React from "react";
 import { FaRulerCombined, FaMapMarkerAlt, FaPhoneAlt, FaUserAlt, FaCommentAlt, FaMap } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useChatStore } from "../../store/chatStore";
 
 interface RoomDetailProps {
+  postId?: string;
   images: string[];
   type: string;
   area?: string;
@@ -20,6 +22,7 @@ interface RoomDetailProps {
 }
 
 const RoomDetail: React.FC<RoomDetailProps> = ({
+  postId,
   images,
   type,
   area,
@@ -36,6 +39,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
   const [showMap, setShowMap] = React.useState(false);
   const navigate = useNavigate();
+  const openChat = useChatStore(state => state.openChat);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -52,41 +56,39 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
     }
   };
 
-  // ✅ SỬA LẠI: Dùng Custom Event thay vì window function
   const handleStartChat = () => {
     if (!posterId) {
       alert('Không tìm thấy thông tin người đăng');
       return;
     }
     
-    console.log('🚀 Dispatching openChat event:', { 
-      userId: posterId, 
-      userName: posterName 
+    // Sử dụng store thay vì window.dispatchEvent
+    const postLinkData = JSON.stringify({
+      isPostLink: true,
+      postId: postId || "",
+      title: type,
+      price: price,
+      address: address,
+      image: images[0] || "",
     });
     
-    // Tạo và dispatch custom event
-    const event = new CustomEvent('openChat', { 
-      detail: { 
-        userId: posterId, 
-        userName: posterName 
-      } 
-    });
-    window.dispatchEvent(event);
+    openChat(posterId, posterName, postLinkData);
     
     // Đóng modal
     onClose();
-    
-    // Debug: Kiểm tra sau 100ms
-    setTimeout(() => {
-      console.log('⏰ Event đã được dispatch. Nếu chat không mở, kiểm tra ChatWidget có được mount không.');
-    }, 100);
   };
 
   const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/50 flex justify-center items-start overflow-auto p-4">
-      <div className="bg-white rounded-2xl shadow-lg max-w-3xl w-full relative my-8">
+    <div
+      className="fixed inset-0 z-[9999] bg-black/50 flex justify-center items-start overflow-auto p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-lg max-w-3xl w-full relative my-8"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-50 text-textGray font-bold text-2xl hover:text-primary"

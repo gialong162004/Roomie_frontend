@@ -5,6 +5,7 @@ import RoomDetail from "../components/rooms/RoomDetail";
 import Navbar from "../components/layouts/Navbar";
 import { useToast } from "../components/common/ToastProvider";
 import { useRoomStore } from "../store/roomStore";
+import { provinces } from "../constants/locations";
 
 interface Room {
   _id: string;
@@ -60,13 +61,75 @@ const HomeNew: React.FC = () => {
   const { categories, roomsByCategory, recommendedRooms, hasFetched, setData } = useRoomStore();
   const [loadingCategories, setLoadingCategories] = useState(!hasFetched);
   const [loadingRooms, setLoadingRooms] = useState(!hasFetched);
+  const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const [selectedCity, setSelectedCity] = useState<string>("Hồ Chí Minh");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<RoomDetailType | null>(null);
   const { showToast } = useToast();
 
-  const heroImage =
-    "https://gotrangtri.vn/wp-content/uploads/2021/04/thiet-ke-noi-that-chung-cu-bia.jpg";
+  const extractRoomsFromResponse = (response: any): Room[] => {
+    if (Array.isArray(response?.content)) return response.content;
+    if (Array.isArray(response?.data?.content)) return response.data.content;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response)) return response;
+    return [];
+  };
+
+  const buildStorePayloadFromRooms = (rooms: Room[]) => {
+    const grouped: { [key: string]: Room[] } = {};
+    rooms.forEach((room: Room) => {
+      const categoryId = getCategoryId(room.category);
+      if (!categoryId) return;
+      if (!grouped[categoryId]) grouped[categoryId] = [];
+      grouped[categoryId].push(room);
+    });
+
+    const vipRooms = rooms
+      .filter(
+        (room: Room) =>
+          (room as any)?.isVip ||
+          (room as any)?.priority === "VIP" ||
+          (room as any)?.priority === 1
+      )
+      .slice(0, 8);
+
+    const topRooms = [...rooms]
+      .sort((a, b) => Number(b.price || 0) - Number(a.price || 0))
+      .slice(0, 8);
+
+    return {
+      roomsByCategory: grouped,
+      recommendedRooms: vipRooms.length > 0 ? vipRooms : topRooms,
+    };
+  };
+
+  const runSearch = async () => {
+    const keyword = searchKeyword.trim();
+
+    setLoadingRooms(true);
+    setSelectedCategory(null);
+
+    try {
+      const filter: any = {};
+      if (keyword) filter.keyword = keyword;
+      if (selectedCity) filter.city = selectedCity;
+
+      const shouldSearch = Object.keys(filter).length > 0;
+      const response = shouldSearch
+        ? ((await PostAPI.searchPosts(filter)) as any)
+        : ((await PostAPI.getPost()) as any);
+
+      const rooms = extractRoomsFromResponse(response);
+      setData({ ...buildStorePayloadFromRooms(rooms), hasFetched: true });
+    } catch (error) {
+      console.error("Error searching rooms:", error);
+      showToast("Lỗi khi tìm kiếm phòng", { type: "error" });
+    } finally {
+      setLoadingRooms(false);
+    }
+  };
+
 
   // Fetch categories
   useEffect(() => {
@@ -97,37 +160,10 @@ const HomeNew: React.FC = () => {
     const fetchRooms = async () => {
       try {
         const response = await PostAPI.getPost() as any;
-        const rooms = Array.isArray(response?.content)
-          ? response.content
-          : Array.isArray(response?.data?.content)
-            ? response.data.content
-            : Array.isArray(response)
-              ? response
-              : [];
+        const rooms = extractRoomsFromResponse(response);
         console.log("Fetched rooms:", rooms);
 
-        const grouped: { [key: string]: Room[] } = {};
-        rooms.forEach((room: Room) => {
-          const categoryId = getCategoryId(room.category);
-          if (!categoryId) return;
-          if (!grouped[categoryId]) grouped[categoryId] = [];
-          grouped[categoryId].push(room);
-        });
-
-        const vipRooms = rooms
-          .filter((room: Room) => (room as any)?.isVip || (room as any)?.priority === 'VIP' || (room as any)?.priority === 1)
-          .slice(0, 8);
-
-        const topRooms = [...rooms]
-          .sort((a, b) => Number(b.price || 0) - Number(a.price || 0))
-          .slice(0, 8);
-
-        // ✅ thay 2 setRoomsByCategory + setRecommendedRooms bằng setData
-        setData({
-          roomsByCategory: grouped,
-          recommendedRooms: vipRooms.length > 0 ? vipRooms : topRooms,
-          hasFetched: true,
-        });
+        setData({ ...buildStorePayloadFromRooms(rooms), hasFetched: true });
 
       } catch (error) {
         console.error("Error fetching rooms:", error);
@@ -193,56 +229,171 @@ const HomeNew: React.FC = () => {
       <div
         style={{
           width: "100%",
-          height: "80vh",
+          background: "linear-gradient(135deg, #FF6B00 0%, #FF8C00 50%, #FFA500 100%)",
           position: "relative",
           overflow: "hidden",
+          padding: "40px 20px 50px",
+          textAlign: "center",
         }}
       >
-        <img
-          src={heroImage}
-          alt="Hero"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(0, 0, 0, 0.4)",
-          }}
-        />
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            color: "white",
-            textAlign: "center",
-            padding: "0 20px",
-          }}
-        >
+        {/* Background decorative elements */}
+        <div style={{ position: "relative", zIndex: 1 }}>
           <h1
             style={{
-              fontSize: "3rem",
+              fontSize: "2.5rem",
               fontWeight: "bold",
-              marginBottom: "1rem",
+              color: "white",
+              marginBottom: "0.5rem",
             }}
           >
-            Tìm căn hộ mơ ước của bạn
+            Nhà vừa ý, giá hợp lý!
           </h1>
-          <p style={{ fontSize: "1.5rem", maxWidth: "700px" }}>
-            Khám phá hàng trăm phòng cho thuê chất lượng cao với giá cả hợp lý
-          </p>
+
+          {/* Tab buttons */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "8px",
+              marginBottom: "24px",
+              marginTop: "16px",
+            }}
+          >
+            {["Cho thuê", "Mua bán", "Dự án"].map((tab) => (
+              <button
+                key={tab}
+                style={{
+                  padding: "8px 24px",
+                  borderRadius: "999px",
+                  border: "2px solid white",
+                  background: tab === "Mua bán" ? "white" : "transparent",
+                  color: tab === "Mua bán" ? "#FF6B00" : "white",
+                  fontWeight: "600",
+                  fontSize: "0.95rem",
+                  cursor: "pointer",
+                }}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Search bar */}
+          <form
+            style={{
+              display: "flex",
+              alignItems: "center",
+              background: "white",
+              borderRadius: "12px",
+              padding: "8px 8px 8px 16px",
+              maxWidth: "860px",
+              margin: "0 auto",
+              gap: "8px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+            }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              runSearch();
+            }}
+          >
+            {/* Search input */}
+            <div style={{ display: "flex", alignItems: "center", flex: 1, gap: "8px" }}>
+              <svg width="20" height="20" fill="none" stroke="#999" strokeWidth="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Tìm bất động sản..."
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                style={{
+                  border: "none",
+                  outline: "none",
+                  fontSize: "0.95rem",
+                  color: "#333",
+                  width: "100%",
+                  background: "transparent",
+                }}
+              />
+            </div>
+
+            {/* Divider */}
+            <div style={{ width: "1px", height: "28px", background: "#e0e0e0" }} />
+
+            {/* Location selector */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "0 12px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <svg width="16" height="16" fill="#FF6B00" viewBox="0 0 24 24">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                style={{
+                  border: "none",
+                  outline: "none",
+                  fontSize: "0.9rem",
+                  color: "#333",
+                  background: "transparent",
+                  cursor: "pointer",
+                  maxWidth: "180px",
+                }}
+              >
+                <option value="">Toàn quốc</option>
+                {provinces.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Divider */}
+            <div style={{ width: "1px", height: "28px", background: "#e0e0e0" }} />
+
+            {/* Property type selector */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "0 12px",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <svg width="16" height="16" fill="none" stroke="#666" strokeWidth="2" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+              </svg>
+              <span style={{ fontSize: "0.9rem", color: "#666" }}>Loại hình BĐS</span>
+            </div>
+
+            {/* Search button */}
+            <button
+              type="submit"
+              style={{
+                background: "#FF6B00",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                padding: "12px 28px",
+                fontWeight: "700",
+                fontSize: "1rem",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Tìm nhà
+            </button>
+          </form>
         </div>
       </div>
 
@@ -761,6 +912,7 @@ const HomeNew: React.FC = () => {
 
       {selectedRoom && (
         <RoomDetail
+          postId={selectedRoom._id}
           images={selectedRoom.images?.length
             ? selectedRoom.images
             : ["https://visaho.vn/upload_images/images/2022/04/01/phan-loai-can-ho-chung-cu-7.jpg"]

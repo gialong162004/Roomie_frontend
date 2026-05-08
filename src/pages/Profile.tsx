@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Edit2, Save, X, Home } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import CreatePostModal from "../components/posts/CreatePostModal";
 import { UserAPI, PostAPI } from "../api/api";
 import PostCard from "../components/posts/PostCard";
@@ -43,6 +43,7 @@ const InfoItem = ({
 );
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const { userId } = useParams<{ userId?: string }>();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isOwner, setIsOwner] = useState(false);
@@ -446,13 +447,22 @@ const ProfilePage = () => {
               </h3>
 
               {isOwner && (
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primaryDark transition flex items-center gap-2"
-                >
-                  <Home className="w-4 h-4" />
-                  Đăng tin mới
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => navigate("/pricing")}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition"
+                  >
+                    Đăng kí gói
+                  </button>
+
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primaryDark transition flex items-center gap-2"
+                  >
+                    <Home className="w-4 h-4" />
+                    Đăng tin mới
+                  </button>
+                </div>
               )}
             </div>
 

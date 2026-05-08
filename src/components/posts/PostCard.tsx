@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { MapPin, DollarSign, Home, Calendar, X, ChevronLeft, ChevronRight, Zap } from "lucide-react";
+import { PostAPI } from "../../api/api";
+import { useToast } from "../common/ToastProvider";
 
 interface Post {
   _id: string;
@@ -13,6 +14,7 @@ interface Post {
   images: string[];
   createdAt: string;
   statusApproval: boolean;
+  available?: boolean;
 }
 
 interface BoostPackage {
@@ -37,11 +39,17 @@ interface PostCardProps {
 }
 
 const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) => {
-  const navigate = useNavigate();
+  const { showToast } = useToast();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<BoostPackage>(BOOST_PACKAGES[1]);
+  const [available, setAvailable] = useState<boolean>(post.available ?? true);
+  const [isUpdatingAvailable, setIsUpdatingAvailable] = useState(false);
+
+  useEffect(() => {
+    setAvailable(post.available ?? true);
+  }, [post._id, post.available]);
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
@@ -65,6 +73,29 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) =
       onBoost(post._id, selectedPackage.id);
     }
     setIsBoostModalOpen(false);
+  };
+
+  const handleToggleAvailable = async () => {
+    if (isUpdatingAvailable) return;
+    const nextAvailable = !available;
+
+    setIsUpdatingAvailable(true);
+    try {
+      await PostAPI.editAvailable(post._id, nextAvailable);
+      setAvailable(nextAvailable);
+      showToast(nextAvailable ? "Đã chuyển trạng thái sang còn phòng" : "Đã chuyển trạng thái sang đã cho thuê", {
+        type: "success",
+      });
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(error);
+      showToast("Cập nhật trạng thái thất bại", {
+        type: "error",
+        subtitle: "Vui lòng thử lại sau",
+      });
+    } finally {
+      setIsUpdatingAvailable(false);
+    }
   };
 
   return (
@@ -107,6 +138,14 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) =
               }`}
             >
               {post.statusApproval === true ? "Đã duyệt" : "Chưa duyệt"}
+            </span>
+
+            <span
+              className={`absolute top-3 left-3 px-3 py-1 text-xs rounded-full font-medium shadow-md ${
+                available ? "bg-primary text-white" : "bg-textGray text-white"
+              }`}
+            >
+              {available ? "Còn phòng" : "Đã cho thuê"}
             </span>
           </div>
 
@@ -151,25 +190,30 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) =
 
             {/* Nút hành động cho chủ bài đăng */}
             {isOwner && (
-              <div className="flex gap-2 mt-3">
-                {/* Nút đẩy bài - nổi bật nhất */}
+              <div className="flex flex-wrap gap-2 mt-3">
                 <button
-                  onClick={() => navigate("/pricing")}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded transition text-sm font-medium shadow-sm"
+                  onClick={handleToggleAvailable}
+                  disabled={isUpdatingAvailable}
+                  className={`flex-1 min-w-[140px] px-4 py-2 text-white rounded transition text-sm font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                    available ? "bg-textGray hover:bg-textDark" : "bg-primary hover:bg-primary/90"
+                  }`}
                 >
-                  <Zap className="w-4 h-4" />
-                  Đẩy bài
+                  {isUpdatingAvailable
+                    ? "Đang cập nhật..."
+                    : available
+                      ? "Đánh dấu đã cho thuê"
+                      : "Đánh dấu còn phòng"}
                 </button>
 
                 <button
                   onClick={() => onEdit?.(post._id)}
-                  className="flex-1 px-4 py-2 text-primary border border-primary hover:bg-secondary rounded transition text-sm font-medium"
+                  className="flex-1 min-w-[140px] px-4 py-2 text-primary border border-primary hover:bg-secondary rounded transition text-sm font-medium"
                 >
                   Sửa
                 </button>
                 <button
                   onClick={() => onDelete?.(post._id)}
-                  className="flex-1 px-4 py-2 text-red-600 border border-red-600 hover:bg-red-50 rounded transition text-sm font-medium"
+                  className="flex-1 min-w-[140px] px-4 py-2 text-red-600 border border-red-600 hover:bg-red-50 rounded transition text-sm font-medium"
                 >
                   Xóa
                 </button>

@@ -5,12 +5,14 @@ interface MessageBubbleProps {
   message: Message;
   onEdit?: (messageId: string, newText: string) => void;
   onRecall?: (messageId: string) => void;
+  onPostClick?: (postId: string) => void;
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ 
   message, 
   onEdit, 
-  onRecall 
+  onRecall,
+  onPostClick
 }) => {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(message.text);
@@ -42,6 +44,20 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
     setEditing(false);
   };
+
+  let postLinkData = null;
+  let textToRender = message.text;
+  if (message.text && message.text.startsWith('{"isPostLink"')) {
+    try {
+      const parsed = JSON.parse(message.text);
+      if (parsed.isPostLink) {
+        postLinkData = parsed;
+        textToRender = "";
+      }
+    } catch (e) {
+      // Ignore parsing error, fallback to normal text
+    }
+  }
 
   if (message.isRecalled) {
     return (
@@ -154,9 +170,42 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                   </div>
                 )}
 
+                {/* Hiện thị Post Link Card */}
+                {postLinkData && (
+                  <div 
+                    className="flex items-center gap-2 bg-white/90 p-1.5 rounded-lg w-full max-w-[240px] cursor-pointer hover:bg-gray-50 border border-gray-100 shadow-sm transition-all focus:outline-none"
+                    onClick={() => {
+                      if (onPostClick && postLinkData.postId) {
+                        onPostClick(postLinkData.postId);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    {postLinkData.image && (
+                      <img 
+                        src={postLinkData.image} 
+                        alt="post thumbnail" 
+                        className="w-12 h-12 object-cover rounded-md flex-shrink-0 border border-gray-100"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0 pr-1">
+                      <div className="text-gray-800 text-xs font-semibold truncate leading-tight">
+                        {postLinkData.title}
+                      </div>
+                      <div className="text-teal-600 font-bold text-[11px] mt-0.5">
+                        {postLinkData.price} VNĐ
+                      </div>
+                      <div className="text-gray-500 text-[10px] truncate mt-0.5" title={postLinkData.address}>
+                        {postLinkData.address}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Hiển thị text nếu có */}
-                {message.text && (
-                  <p className="text-sm leading-relaxed">{message.text}</p>
+                {textToRender && (
+                  <p className="text-sm leading-relaxed">{textToRender}</p>
                 )}
 
                 <div className="flex items-center justify-between mt-1">

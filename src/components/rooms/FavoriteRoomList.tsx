@@ -218,6 +218,7 @@ const FavoriteRoomList: React.FC = () => {
       {/* Modal RoomDetail */}
       {selectedRoom && (
         <RoomDetail
+          postId={selectedRoom._id}
           images={
             selectedRoom.images.length > 0
               ? selectedRoom.images

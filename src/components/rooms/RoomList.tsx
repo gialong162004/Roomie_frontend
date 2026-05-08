@@ -300,6 +300,7 @@ const RoomList: React.FC<RoomListProps> = ({
 
       {selectedRoom && (
         <RoomDetail
+          postId={selectedRoom._id}
           images={selectedRoom.images.length > 0 
             ? selectedRoom.images 
             : ["https://visaho.vn/upload_images/images/2022/04/01/phan-loai-can-ho-chung-cu-7.jpg"]

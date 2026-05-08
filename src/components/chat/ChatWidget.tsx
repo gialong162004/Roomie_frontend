@@ -6,9 +6,20 @@ import { MessageList, type Message } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { ChatToggleButton } from './ChatToggleButton';
 import { useSocket } from '../../hooks/useSocket';
+import { useChatStore } from '../../store/chatStore';
+import RoomDetail from '../rooms/RoomDetail';
+import { PostAPI } from '../../api/api';
 
 const ChatWidget: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const { 
+    isOpen, 
+    setIsOpen, 
+    selectedUserId, 
+    selectedUserName, 
+    initialMessage, 
+    clearInitialMessage 
+  } = useChatStore();
+
   const [showContactList, setShowContactList] = useState(true);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -16,8 +27,20 @@ const ChatWidget: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [conversationsMap, setConversationsMap] = useState<Record<string, Message[]>>({});
   const [messages, setMessages] = useState<Message[]>([]);
+  const [pendingPostLink, setPendingPostLink] = useState<string | null>(null);
+  
+  const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
 
   // Helper functions
+  const handlePostClick = async (postId: string) => {
+    try {
+      const res = await PostAPI.getPostDetail(postId);
+      setSelectedRoom(res);
+    } catch (err) {
+      console.error("Error fetching post detail", err);
+    }
+  };
+
   const getCurrentUserId = (): string => {
     try {
       const userStr = localStorage.getItem('user');
@@ -267,7 +290,67 @@ const ChatWidget: React.FC = () => {
     onMessageRead: handleMessageRead,
   });
 
-  // Event listener for opening chat from other components
+  // Handle open chat from Zustand store
+  useEffect(() => {
+    const handleStoreOpenChat = async () => {
+      if (!selectedUserId) return;
+      
+      let targetConversationId = null;
+
+      const existingContact = contacts.find(c => c.id === selectedUserId);
+      
+      if (existingContact) {
+        handleSelectContact(existingContact);
+        targetConversationId = existingContact.id;
+      } else {
+        try {
+          const response = await MessageAPI.createConversation(selectedUserId);
+          const newConversation = response as any;
+          
+          const otherMember = newConversation.members?.find((m: any) => m._id !== currentUserId);
+          
+          const newContact: Contact = {
+            id: newConversation._id,
+            name: otherMember?.name || selectedUserName || 'Người dùng',
+            avatar: otherMember?.avatar,
+            propertyName: 'Tin nhắn',
+            lastMessage: '',
+            unreadCount: 0,
+            online: false,
+          };
+          
+          targetConversationId = newContact.id;
+
+          setContacts(prev => {
+            if (prev.find(c => c.id === newContact.id)) return prev;
+            return [newContact, ...prev];
+          });
+          setSelectedContact(newContact);
+          setShowContactList(false);
+          setMessages([]);
+          
+          await loadMessagesForContact(newContact.id);
+        } catch (error) {
+          console.error('❌ Error creating conversation:', error);
+        }
+      }
+      
+      if (initialMessage && targetConversationId) {
+        // Prepare as pending message instead of auto-sending
+        if (initialMessage.startsWith('{"isPostLink"')) {
+          setPendingPostLink(initialMessage);
+        } else {
+          setInputValue(initialMessage);
+        }
+
+        clearInitialMessage();
+      }
+    };
+
+    handleStoreOpenChat();
+  }, [selectedUserId, selectedUserName, initialMessage]);
+
+  // Handle open chat via custom event (fallback/legacy)
   useEffect(() => {
     const handleOpenChat = async (event: any) => {
       const { userId, userName } = event.detail;
@@ -463,10 +546,49 @@ const ChatWidget: React.FC = () => {
 
   // Cập nhật handleSendMessage
   const handleSendMessage = async (images?: File[]) => {
-    if ((inputValue.trim() === '' && !images) || !selectedContact || !socketRef.current) {
+    if ((inputValue.trim() === '' && (!images || images.length === 0) && !pendingPostLink) || !selectedContact || !socketRef.current) {
       return;
     }
   
+    // Gửi card bài viết trước nếu có
+    if (pendingPostLink) {
+      const tempPostId = `temp_post_${Date.now()}`;
+      const postMessage: Message = {
+        id: tempPostId,
+        text: pendingPostLink,
+        sender: 'user',
+        timestamp: new Date(),
+        conversationId: selectedContact.id,
+        senderId: currentUserId,
+        images: [],
+      };
+    
+      setMessages(prev => [...prev, postMessage]);
+      setConversationsMap(prev => ({
+        ...prev,
+        [selectedContact.id]: [...(prev[selectedContact.id] || []), postMessage]
+      }));
+      
+      try {
+        socketRef.current.emit('sendMessage', {
+          conversationId: selectedContact.id,
+          senderId: currentUserId,
+          text: pendingPostLink,
+          images: [],
+          files: [],
+        });
+      } catch (error) {
+        console.error('❌ Error sending post link:', error);
+      }
+      
+      setPendingPostLink(null);
+    }
+
+    // Nếu không có nội dung text hay ảnh thì dừng lại (chỉ gửi card)
+    if (inputValue.trim() === '' && (!images || images.length === 0)) {
+      return;
+    }
+
     // Convert ảnh sang base64 trước
     let imageData: string[] = [];
     if (images && images.length > 0) {
@@ -603,7 +725,53 @@ const ChatWidget: React.FC = () => {
                 messages={messages}
                 onEditMessage={handleEditMessage}
                 onRecallMessage={handleRecallMessage}
+                onPostClick={handlePostClick}
               />
+                
+              {/* Phần preview Box Post chuẩn bị được gửi */}
+              {pendingPostLink && (() => {
+                let pendingPost = null;
+                try {
+                  pendingPost = JSON.parse(pendingPostLink);
+                } catch(e) {}
+                  
+                if (!pendingPost?.isPostLink) return null;
+
+                return (
+                  <div className="relative p-2 bg-gray-50 flex justify-center border-t border-gray-100">
+                    <button 
+                      onClick={() => setPendingPostLink(null)}
+                      className="absolute right-6 top-3 text-gray-400 hover:text-gray-700 bg-white rounded-full p-0.5 shadow-sm border border-gray-200 z-10 hover:bg-gray-100 transition-colors"
+                      title="Hủy đính kèm"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                    <div className="flex items-center gap-2 bg-white p-1.5 w-[240px] rounded-lg shadow-sm border border-teal-100 transition-opacity hover:opacity-100 cursor-default">
+                      {pendingPost.image && (
+                        <img 
+                          src={pendingPost.image} 
+                          alt="post thumbnail" 
+                          className="w-11 h-11 object-cover rounded flex-shrink-0 border border-slate-100"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className="text-gray-700 text-[11px] font-semibold truncate leading-tight">
+                          {pendingPost.title}
+                        </div>
+                        <div className="text-teal-600 font-bold text-[10px] mt-0.5">
+                          {pendingPost.price} VNĐ
+                        </div>
+                        <div className="text-gray-400 text-[9px] truncate mt-0.5" title={pendingPost.address}>
+                          {pendingPost.address}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <MessageInput
                 value={inputValue}
                 onChange={setInputValue}
@@ -619,6 +787,27 @@ const ChatWidget: React.FC = () => {
         unreadCount={totalUnreadCount}
         onClick={() => setIsOpen(!isOpen)}
       />
+
+      {/* Render the post modal when clicking on a post link in chat */}
+      {selectedRoom && (
+        <RoomDetail
+          postId={selectedRoom._id}
+          images={selectedRoom.images?.length > 0 
+            ? selectedRoom.images 
+            : ["https://visaho.vn/upload_images/images/2022/04/01/phan-loai-can-ho-chung-cu-7.jpg"]
+          }
+          type={selectedRoom.title}
+          area={selectedRoom.superficies ? `${selectedRoom.superficies} m²` : "-- m²"}
+          address={`${selectedRoom.address}, ${selectedRoom.district}, ${selectedRoom.city}`}
+          price={selectedRoom.price.toLocaleString()}
+          badge={selectedRoom.category?.name || "Đã duyệt"}
+          description={selectedRoom.description}
+          posterName={selectedRoom.owner?.name}
+          posterId={selectedRoom.owner?._id}
+          phone={selectedRoom.owner?.phone || "Hiển thị để liên hệ"}
+          onClose={() => setSelectedRoom(null)}
+        />
+      )}
     </div>
   );
 };

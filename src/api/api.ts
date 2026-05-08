@@ -142,10 +142,13 @@ const getAllPackages = () => {
 const paySubscription = (packageId: string) => {
   return axios.post("/api/subscriptions/zalo/create", { packageId });
 }
+const editAvailable = (postId: string, available: boolean) => {
+  return axios.put(`/api/posts/available/${postId}`, { available });
+}
 
 export const AuthAPI = { register, verifyRegister, login, getProfile };
 export const PostAPI = { getPostDetail, getPost, createPost, getCategory, getMyPost, deletePost, updatePost, getUserPost, getFavoritePosts, 
-  addFavoritePost, removeFavoritePost, searchPosts, getNearbyPosts };
+  addFavoritePost, removeFavoritePost, searchPosts, getNearbyPosts, editAvailable };
 export const UserAPI = { getProfile, updateProfile, updateAvatar, getPublicProfile };
 export const MessageAPI = { getConversation, createConversation, deleteConversation, getMessages };
 export const NoteAPI = { createNote, updateNote, getNote, deleteNote };

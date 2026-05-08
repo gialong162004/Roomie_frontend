@@ -18,12 +18,14 @@ interface MessageListProps {
   messages: Message[];
   onEditMessage?: (messageId: string, newText: string) => void;
   onRecallMessage?: (messageId: string) => void;
+  onPostClick?: (postId: string) => void;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({ 
   messages,
   onEditMessage,
-  onRecallMessage 
+  onRecallMessage,
+  onPostClick
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -51,6 +53,7 @@ export const MessageList: React.FC<MessageListProps> = ({
           message={message}
           onEdit={onEditMessage}
           onRecall={onRecallMessage}
+          onPostClick={onPostClick}
         />
       ))}
       <div ref={messagesEndRef} />
