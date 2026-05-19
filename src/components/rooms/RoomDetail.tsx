@@ -62,7 +62,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
       return;
     }
     
-    // Sử dụng store thay vì window.dispatchEvent
     const postLinkData = JSON.stringify({
       isPostLink: true,
       postId: postId || "",
@@ -74,7 +73,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
     
     openChat(posterId, posterName, postLinkData);
     
-    // Đóng modal
     onClose();
   };
 

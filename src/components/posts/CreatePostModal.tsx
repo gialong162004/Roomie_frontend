@@ -3,7 +3,7 @@ import { X, Upload, Home, DollarSign, MapPin } from 'lucide-react';
 import type { PostFormData } from '../../types/post.type';
 import { PostAPI } from '../../api/api'
 import { useToast } from "../common/ToastProvider";
-import { provinces, districtsByProvince } from '../../constants/locations';
+import { useLocations } from "../../hooks/useLocations";
 
 interface Post {
   _id: string;
@@ -45,6 +45,8 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
   const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
+
+  const { provinces, districts: availableDistricts } = useLocations(formData.city);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -273,7 +275,7 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
               >
                 <option value="">Chọn tỉnh/thành</option>
                 {provinces.map((prov) => (
-                  <option key={prov} value={prov}>{prov}</option>
+                  <option key={prov.code} value={prov.name}>{prov.name}</option>
                 ))}
               </select>
             </div>
@@ -290,8 +292,8 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
                 disabled={!formData.city}
               >
                 <option value="">Chọn quận/huyện</option>
-                {formData.city && districtsByProvince[formData.city]?.map((dist: string) => (
-                  <option key={dist} value={dist}>{dist}</option>
+                {availableDistricts.map((dist) => (
+                  <option key={dist.code} value={dist.name}>{dist.name}</option>
                 ))}
               </select>
             </div>

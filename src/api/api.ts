@@ -145,13 +145,32 @@ const paySubscription = (packageId: string) => {
 const editAvailable = (postId: string, available: boolean) => {
   return axios.put(`/api/posts/available/${postId}`, { available });
 }
+const getNewPosts = (params: {page?: number; limit?: number }) => {
+  return axios.get("/api/posts/newest", { params });
+};
+const getReviewsForMe = () => {
+  return axios.get("/api/reviews/me/about");
+}
+const getReviewsByMe = () => {
+  return axios.get("/api/reviews/me");
+}
+const createReview = (revieweeId: string, rating: number, text: string) => {
+  return axios.post("/api/reviews", { revieweeId, rating, text });
+}
+const getReview = (reviewId: string) => {
+  return axios.get(`/api/reviews/about/${reviewId}`);
+}
+const checkReviewEligibility = (userId: string) => {
+  return axios.get(`/api/reviews/eligibility/${userId}`);
+}
 
 export const AuthAPI = { register, verifyRegister, login, getProfile };
 export const PostAPI = { getPostDetail, getPost, createPost, getCategory, getMyPost, deletePost, updatePost, getUserPost, getFavoritePosts, 
-  addFavoritePost, removeFavoritePost, searchPosts, getNearbyPosts, editAvailable };
+  addFavoritePost, removeFavoritePost, searchPosts, getNearbyPosts, editAvailable, getNewPosts };
 export const UserAPI = { getProfile, updateProfile, updateAvatar, getPublicProfile };
 export const MessageAPI = { getConversation, createConversation, deleteConversation, getMessages };
 export const NoteAPI = { createNote, updateNote, getNote, deleteNote };
 export const NotificationAPI = { getAllNotifications, createNewNotifications, readNotifications, readAllNotifications,
   deleteNotifications };
 export const SubscriptionAPI = { getAllPackages, paySubscription };
+export const ReviewAPI = { getReviewsForMe, getReviewsByMe, createReview, getReview, checkReviewEligibility };

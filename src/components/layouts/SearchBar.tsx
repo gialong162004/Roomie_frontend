@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { PostAPI } from "../../api/api";
-import { provinces, districtsByProvince } from "../../constants/locations";
+import { useLocations } from "../../hooks/useLocations";
 
 interface SearchBarProps {
   onSearch: (searchData: any) => void;
@@ -19,6 +19,8 @@ export default function SearchBar({ onSearch, onSearchResults }: SearchBarProps)
 
   const [categories, setCategories] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  const { provinces, districts: availableDistricts } = useLocations(searchData.city);
 
   // Lấy danh sách categories
   useEffect(() => {
@@ -93,10 +95,6 @@ export default function SearchBar({ onSearch, onSearchResults }: SearchBarProps)
     }
   };
 
-  const availableDistricts = searchData.city
-    ? districtsByProvince[searchData.city as keyof typeof districtsByProvince] || []
-    : [];
-
   return (
     <section className="relative z-20 -mt-12 flex justify-center px-4">
       <div className="bg-white shadow-xl rounded-2xl px-6 py-6 w-full max-w-6xl">
@@ -161,9 +159,9 @@ export default function SearchBar({ onSearch, onSearchResults }: SearchBarProps)
             className="flex-1 min-w-0 border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
           >
             <option value="">Chọn tỉnh/thành phố</option>
-            {provinces.map((province) => (
-              <option key={province} value={province}>
-                {province}
+            {provinces.map((prov) => (
+              <option key={prov.code} value={prov.name}>
+                {prov.name}
               </option>
             ))}
           </select>
@@ -177,9 +175,9 @@ export default function SearchBar({ onSearch, onSearchResults }: SearchBarProps)
             <option value="">
               {searchData.city ? "Chọn quận/huyện" : "Chọn tỉnh trước"}
             </option>
-            {availableDistricts.map((district) => (
-              <option key={district} value={district}>
-                {district}
+            {availableDistricts.map((dist) => (
+              <option key={dist.code} value={dist.name}>
+                {dist.name}
               </option>
             ))}
           </select>

@@ -9,12 +9,14 @@ import SavedPostsPage from "./components/posts/savedPost";
 import IntroPage from "./pages/Intro";
 import PricingPage from "./pages/PricingPage";
 import MapSearchRadius from "./pages/MapSearchRadius/MapSearchRadius";
+import SearchPage from "./pages/Home";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<MainLayout />}>
         <Route index element={<Home />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="saved-posts" element={<SavedPostsPage />} />
