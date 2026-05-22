@@ -50,7 +50,7 @@ const formatPrice = (price: number): string => {
 
 const HomeNew: React.FC = () => {
   const { roomsByCategory, recommendedRooms, hasFetched, setData } = useRoomStore();
-  const [loadingCategories, setLoadingCategories] = useState(!hasFetched);
+  const [, setLoadingCategories] = useState(!hasFetched);
   const [loadingRooms, setLoadingRooms] = useState(!hasFetched);
   const [loadingNewPosts, setLoadingNewPosts] = useState(true);
   const [newPosts, setNewPosts] = useState<Room[]>([]);
