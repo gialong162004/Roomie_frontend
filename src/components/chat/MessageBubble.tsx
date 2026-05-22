@@ -72,7 +72,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   return (
     <>
       <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} group`}>
-        <div className="flex items-center gap-2 max-w-[75%]">
+        <div 
+          className={`flex items-center gap-2 ${
+            postLinkData ? 'max-w-[85%] sm:max-w-[90%]' : 'max-w-[75%]'
+          }`}
+        >
           {isOwnMessage && !editing && (
             <div className="relative flex items-center" ref={menuRef}>
               <button
@@ -175,8 +179,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                   <div 
                     className="flex items-center gap-2 bg-white/90 p-1.5 rounded-lg w-full max-w-[240px] cursor-pointer hover:bg-gray-50 border border-gray-100 shadow-sm transition-all focus:outline-none"
                     onClick={() => {
-                      if (onPostClick && postLinkData.postId) {
-                        onPostClick(postLinkData.postId);
+                      const actualPostId = postLinkData.postId || postLinkData.id || postLinkData._id;
+                      if (onPostClick && actualPostId) {
+                        onPostClick(actualPostId);
+                      } else if (!actualPostId) {
+                        console.error("❌ Không thể kích hoạt Modal vì Object JSON của Bot không chứa thuộc tính định danh nào (postId, id, _id)!");
                       }
                     }}
                     role="button"

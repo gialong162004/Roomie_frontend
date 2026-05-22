@@ -103,7 +103,6 @@ const ReviewCard = ({ review }: { review: Review }) => {
   );
 };
 
-// ---- CreateReviewModal ----
 const CreateReviewModal = ({
   targetName,
   onSubmit,
@@ -173,7 +172,6 @@ const CreateReviewModal = ({
   );
 };
 
-// ---- InfoItem ----
 const InfoItem = ({
   label,
   value,
@@ -206,9 +204,6 @@ const InfoItem = ({
   </div>
 );
 
-// ============================================================
-// MAIN ProfilePage
-// ============================================================
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { userId } = useParams<{ userId?: string }>();
@@ -348,11 +343,6 @@ const ProfilePage = () => {
     };
     if (profile && !isOwner) checkEligibility();
   }, [userId, isOwner, profile]);
-
-  // Debug: log canReview state (xóa sau khi fix xong)
-  useEffect(() => {
-    if (!isOwner) console.log("[Review] canReview =", canReview, "| userId =", userId);
-  }, [canReview]);
 
   if (!profile)
     return <div className="p-6 text-center">Đang tải thông tin người dùng...</div>;

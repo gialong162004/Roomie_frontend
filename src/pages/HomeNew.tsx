@@ -49,7 +49,7 @@ const formatPrice = (price: number): string => {
 };
 
 const HomeNew: React.FC = () => {
-  const { categories, roomsByCategory, recommendedRooms, hasFetched, setData } = useRoomStore();
+  const { roomsByCategory, recommendedRooms, hasFetched, setData } = useRoomStore();
   const [loadingCategories, setLoadingCategories] = useState(!hasFetched);
   const [loadingRooms, setLoadingRooms] = useState(!hasFetched);
   const [loadingNewPosts, setLoadingNewPosts] = useState(true);
@@ -57,16 +57,14 @@ const HomeNew: React.FC = () => {
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [selectedCity, setSelectedCity] = useState<string>("Hồ Chí Minh");
   const { provinces } = useLocations();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<RoomDetailType | null>(null);
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  // --- Derived room lists ---
   const allRooms: Room[] = Object.values(roomsByCategory).flat();
 
-  const featuredRooms: Room[] = recommendedRooms; // bài đăng nổi bật (VIP / top)
+  const featuredRooms: Room[] = recommendedRooms;
 
   const forYouRooms: Room[] = [...allRooms]
     .filter((r) => r.city === selectedCity)
@@ -142,7 +140,7 @@ const HomeNew: React.FC = () => {
     if (hasFetched) return;
     (async () => {
       try {
-        const response = (await PostAPI.getPost()) as any;
+        const response = (await PostAPI.getPost({ limit: 10, page: 1 })) as any;
         const rooms = extractRoomsFromResponse(response);
         setData({ ...buildStorePayloadFromRooms(rooms), hasFetched: true });
       } catch {
@@ -181,10 +179,6 @@ const HomeNew: React.FC = () => {
     })();
   }, [selectedPostId]);
 
-  const handleCategoryClick = (categoryId: string) => {
-    setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
-  };
-
   const handleViewRoom = (roomId: string) => setSelectedPostId(roomId);
 
   const getPostedTimeAgo = (updatedAt: string) => {
@@ -205,7 +199,7 @@ const HomeNew: React.FC = () => {
       <div
         style={{
           width: "100%",
-          background: "linear-gradient(135deg, #FF6B00 0%, #FF8C00 50%, #FFA500 100%)",
+          background: "#f5f5f5", 
           position: "relative",
           overflow: "hidden",
           padding: "40px 20px 50px",
@@ -213,30 +207,9 @@ const HomeNew: React.FC = () => {
         }}
       >
         <div style={{ position: "relative", zIndex: 1 }}>
-          <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", color: "white", marginBottom: "0.5rem" }}>
-            Nhà vừa ý, giá hợp lý!
+          <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", color: "#334155", marginBottom: "1.5rem" }}> {/* Chuyển sang màu textDark #334155 từ config của bạn */}
+            Roomie – Chạm là thấy phòng.
           </h1>
-
-          {/* Tab buttons */}
-          <div style={{ display: "flex", justifyContent: "center", gap: "8px", margin: "16px 0 24px" }}>
-            {["Cho thuê", "Mua bán", "Dự án"].map((tab) => (
-              <button
-                key={tab}
-                style={{
-                  padding: "8px 24px",
-                  borderRadius: "999px",
-                  border: "2px solid white",
-                  background: tab === "Mua bán" ? "white" : "transparent",
-                  color: tab === "Mua bán" ? "#FF6B00" : "white",
-                  fontWeight: "600",
-                  fontSize: "0.95rem",
-                  cursor: "pointer",
-                }}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
 
           {/* Search bar */}
           <form
@@ -249,33 +222,33 @@ const HomeNew: React.FC = () => {
               maxWidth: "860px",
               margin: "0 auto",
               gap: "8px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
             }}
             onSubmit={(e) => { e.preventDefault(); runSearch(); }}
           >
             <div style={{ display: "flex", alignItems: "center", flex: 1, gap: "8px" }}>
-              <svg width="20" height="20" fill="none" stroke="#999" strokeWidth="2" viewBox="0 0 24 24">
+              <svg width="20" height="20" fill="none" stroke="#64748B" strokeWidth="2" viewBox="0 0 24 24"> {/* Chuyển stroke sang màu textGray #64748B */}
                 <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
               </svg>
               <input
                 type="text"
-                placeholder="Tìm bất động sản..."
+                placeholder="Tìm phòng..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                style={{ border: "none", outline: "none", fontSize: "0.95rem", color: "#333", width: "100%", background: "transparent" }}
+                style={{ border: "none", outline: "none", fontSize: "0.95rem", color: "#334155", width: "100%", background: "transparent" }}
               />
             </div>
 
-            <div style={{ width: "1px", height: "28px", background: "#e0e0e0" }} />
+            <div style={{ width: "1px", height: "28px", background: "#E2E8F0" }} /> {/* Đổi màu gạch dọc sang borderLight #E2E8F0 */}
 
             <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 12px", whiteSpace: "nowrap" }}>
-              <svg width="16" height="16" fill="#FF6B00" viewBox="0 0 24 24">
+              <svg width="16" height="16" fill="#14B8A6" viewBox="0 0 24 24"> {/* Đổi màu icon định vị sang primaryLight #14B8A6 */}
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               </svg>
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
-                style={{ border: "none", outline: "none", fontSize: "0.9rem", color: "#333", background: "transparent", cursor: "pointer", maxWidth: "180px" }}
+                style={{ border: "none", outline: "none", fontSize: "0.9rem", color: "#334155", background: "transparent", cursor: "pointer", maxWidth: "180px" }}
               >
                 <option value="">Toàn quốc</option>
                 {provinces.map((p) => (
@@ -284,24 +257,27 @@ const HomeNew: React.FC = () => {
               </select>
             </div>
 
-            <div style={{ width: "1px", height: "28px", background: "#e0e0e0" }} />
-
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 12px", cursor: "pointer", whiteSpace: "nowrap" }}>
-              <svg width="16" height="16" fill="none" stroke="#666" strokeWidth="2" viewBox="0 0 24 24">
-                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-              </svg>
-              <span style={{ fontSize: "0.9rem", color: "#666" }}>Loại hình BĐS</span>
-            </div>
+            <div style={{ width: "1px", height: "28px", background: "#E2E8F0" }} />
 
             <button
               type="submit"
               style={{
-                background: "#FF6B00", color: "white", border: "none", borderRadius: "8px",
-                padding: "12px 28px", fontWeight: "700", fontSize: "1rem", cursor: "pointer", whiteSpace: "nowrap",
+                background: "#0D9488", // Đổi nút bấm sang màu xanh ngọc primary (#0D9488)
+                color: "white", 
+                border: "none", 
+                borderRadius: "8px",
+                padding: "12px 28px", 
+                fontWeight: "700", 
+                fontSize: "1rem", 
+                cursor: "pointer", 
+                whiteSpace: "nowrap",
+                transition: "background 0.2s", // Thêm hiệu ứng mượt khi hover
               }}
+              // Thêm hiệu ứng đổi màu đậm hơn khi người dùng rê chuột vào nút
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#0F766E")} // primaryDark (#0F766E)
+              onMouseLeave={(e) => (e.currentTarget.style.background = "#0D9488")} // Trở lại primary
             >
-              Tìm nhà
+              Tìm phòng
             </button>
           </form>
         </div>
@@ -332,7 +308,7 @@ const HomeNew: React.FC = () => {
         emptyText="Chưa có bài đăng nào."
         maxItems={8}
         onViewRoom={handleViewRoom}
-        onViewAll={() => setSelectedCategory(null)}
+        onViewAll={() => navigate("/search")}
         viewAllLabel="Xem tất cả"
         backgroundColor="#F8FAFC"
         accentColor="#0D9488"
@@ -347,127 +323,11 @@ const HomeNew: React.FC = () => {
         emptyText={`Không tìm thấy phòng tại ${selectedCity || "khu vực này"}.`}
         maxItems={8}
         onViewRoom={handleViewRoom}
-        onViewAll={() => setSelectedCategory(null)}
+        onViewAll={() => navigate("/search")}
         viewAllLabel="Khám phá thêm"
         backgroundColor="#FFFFFF"
         accentColor="#6366F1"
       />
-
-      {/* Categories Section */}
-      <section style={{ padding: "80px 40px", backgroundColor: "#F8FAFC" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: "60px" }}>
-            <h2 style={{ fontSize: "2.5rem", fontWeight: "bold", color: "#334155", marginBottom: "1rem" }}>
-              Danh Mục Phòng
-            </h2>
-            <p style={{ fontSize: "1.1rem", color: "#64748B" }}>
-              Chọn loại phòng phù hợp với nhu cầu của bạn
-            </p>
-          </div>
-
-          {loadingCategories ? (
-            <div style={{ textAlign: "center", padding: "40px" }}>
-              <p>Đang tải danh mục...</p>
-            </div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" }}>
-              {categories.map((category) => (
-                <div
-                  key={category._id}
-                  onClick={() => handleCategoryClick(category._id)}
-                  style={{
-                    padding: "25px",
-                    backgroundColor: selectedCategory === category._id ? "#0D9488" : "#FFFFFF",
-                    color: selectedCategory === category._id ? "white" : "#334155",
-                    borderRadius: "12px",
-                    cursor: "pointer",
-                    border: selectedCategory === category._id ? "2px solid #0D9488" : "2px solid #E2E8F0",
-                    textAlign: "center",
-                    transition: "all 0.3s ease",
-                    boxShadow: selectedCategory === category._id ? "0 4px 12px rgba(13,148,136,0.3)" : "0 2px 4px rgba(0,0,0,0.1)",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedCategory !== category._id) {
-                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
-                      e.currentTarget.style.backgroundColor = "#E0F7F5";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedCategory !== category._id) {
-                      e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-                      e.currentTarget.style.backgroundColor = "#FFFFFF";
-                    }
-                  }}
-                >
-                  <h3 style={{ fontSize: "1.3rem", fontWeight: "600", marginBottom: "0.5rem" }}>
-                    {category.name}
-                  </h3>
-                  <p style={{ fontSize: "0.9rem", opacity: 0.8 }}>
-                    {roomsByCategory[category._id]?.length || 0} phòng
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Rooms by Category Section */}
-      <section style={{ padding: "80px 40px", backgroundColor: "white" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          {loadingRooms ? (
-            <div style={{ textAlign: "center", padding: "40px" }}>
-              <p>Đang tải phòng...</p>
-            </div>
-          ) : selectedCategory ? (
-            <>
-              <h2 style={{ fontSize: "2rem", fontWeight: "bold", marginBottom: "40px", color: "#334155" }}>
-                {categories.find((c) => c._id === selectedCategory)?.name} ({roomsByCategory[selectedCategory]?.length || 0} phòng)
-              </h2>
-              {/* Reuse RoomListSection for category view */}
-              <RoomListSection
-                title=""
-                rooms={roomsByCategory[selectedCategory] || []}
-                emptyText="Không có phòng trong danh mục này"
-                onViewRoom={handleViewRoom}
-                accentColor="#0D9488"
-              />
-            </>
-          ) : (
-            <>
-              <h2 style={{ fontSize: "2rem", fontWeight: "bold", marginBottom: "40px", color: "#334155" }}>
-                Tất Cả Phòng
-              </h2>
-              {categories.map((category) => (
-                <div key={category._id} style={{ marginBottom: "60px" }}>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "24px", paddingBottom: "15px", borderBottom: "3px solid #0D9488" }}>
-                    <h3 style={{ fontSize: "1.5rem", fontWeight: "600", color: "#334155", margin: 0 }}>
-                      {category.name}
-                    </h3>
-                    <span style={{ marginLeft: "10px", backgroundColor: "#0D9488", color: "white", padding: "5px 12px", borderRadius: "20px", fontSize: "0.9rem", fontWeight: "600" }}>
-                      {roomsByCategory[category._id]?.length || 0}
-                    </span>
-                  </div>
-                  <RoomListSection
-                    title=""
-                    rooms={roomsByCategory[category._id] || []}
-                    emptyText="Không có phòng trong danh mục này"
-                    maxItems={5}
-                    onViewRoom={handleViewRoom}
-                    onViewAll={
-                      (roomsByCategory[category._id]?.length || 0) > 4
-                        ? () => handleCategoryClick(category._id)
-                        : undefined
-                    }
-                    viewAllLabel={`Xem tất cả (${roomsByCategory[category._id]?.length || 0} phòng)`}
-                    accentColor="#0D9488"
-                  />
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-      </section>
 
       {/* Features Section */}
       <section style={{ padding: "80px 40px", backgroundColor: "#F8FAFC" }}>

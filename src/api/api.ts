@@ -16,8 +16,8 @@ const login = (data: LoginPayload) => {
 const getPostDetail = (idPost: string) => {
   return axios.get(`/api/posts/${idPost}`);
 };
-const getPost = () => {
-  return axios.get("/api/posts/approved");
+const getPost = (params?: any) => {
+  return axios.get("/api/posts/approved", { params });
 };
 const createPost = (data: PostFormData) => {
   const form = new FormData();
@@ -163,12 +163,18 @@ const getReview = (reviewId: string) => {
 const checkReviewEligibility = (userId: string) => {
   return axios.get(`/api/reviews/eligibility/${userId}`);
 }
+const chatBot = (message: string) => {
+  return axios.post("/api/chatbot", { message });
+}
+const reportPost = (postId: string, reason: string) => {
+  return axios.post(`/api/posts/report`, { postId, reason });
+}
 
 export const AuthAPI = { register, verifyRegister, login, getProfile };
 export const PostAPI = { getPostDetail, getPost, createPost, getCategory, getMyPost, deletePost, updatePost, getUserPost, getFavoritePosts, 
-  addFavoritePost, removeFavoritePost, searchPosts, getNearbyPosts, editAvailable, getNewPosts };
+  addFavoritePost, removeFavoritePost, searchPosts, getNearbyPosts, editAvailable, getNewPosts, reportPost };
 export const UserAPI = { getProfile, updateProfile, updateAvatar, getPublicProfile };
-export const MessageAPI = { getConversation, createConversation, deleteConversation, getMessages };
+export const MessageAPI = { getConversation, createConversation, deleteConversation, getMessages, chatBot};
 export const NoteAPI = { createNote, updateNote, getNote, deleteNote };
 export const NotificationAPI = { getAllNotifications, createNewNotifications, readNotifications, readAllNotifications,
   deleteNotifications };

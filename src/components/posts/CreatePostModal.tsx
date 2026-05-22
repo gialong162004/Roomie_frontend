@@ -3,7 +3,6 @@ import { X, Upload, Home, DollarSign, MapPin } from 'lucide-react';
 import type { PostFormData } from '../../types/post.type';
 import { PostAPI } from '../../api/api'
 import { useToast } from "../common/ToastProvider";
-import { useLocations } from "../../hooks/useLocations";
 
 interface Post {
   _id: string;
@@ -45,8 +44,6 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
   const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
-
-  const { provinces, districts: availableDistricts } = useLocations(formData.city);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -114,6 +111,7 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
         });
       } else {
         // Tạo bài đăng mới
+        console.log("Submitting new post with data:", formData);
         await PostAPI.createPost(formData);
         showToast("Đăng tin thành công!", {
           type: "success",
@@ -267,35 +265,28 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
               <label className="block text-textDark font-semibold mb-2">
                 Tỉnh/Thành phố <span className="text-red-500">*</span>
               </label>
-              <select
+              <input
+                type="text"
                 value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value, district: '' })}
-                className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors bg-white"
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                placeholder="Ví dụ: Hồ Chí Minh"
+                className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors"
                 required
-              >
-                <option value="">Chọn tỉnh/thành</option>
-                {provinces.map((prov) => (
-                  <option key={prov.code} value={prov.name}>{prov.name}</option>
-                ))}
-              </select>
+              />
             </div>
 
             <div>
               <label className="block text-textDark font-semibold mb-2">
                 Quận/Huyện <span className="text-red-500">*</span>
               </label>
-              <select
+              <input
+                type="text"
                 value={formData.district}
                 onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors bg-white"
+                placeholder="Ví dụ: Quận 1"
+                className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors"
                 required
-                disabled={!formData.city}
-              >
-                <option value="">Chọn quận/huyện</option>
-                {availableDistricts.map((dist) => (
-                  <option key={dist.code} value={dist.name}>{dist.name}</option>
-                ))}
-              </select>
+              />
             </div>
           </div>
 

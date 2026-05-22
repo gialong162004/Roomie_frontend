@@ -70,10 +70,21 @@ body { font-family: 'Be Vietnam Pro', sans-serif; background: var(--bg); color: 
 }
 
 /* SPLIT */
-.split { display: flex; flex: 1; overflow: hidden; }
+.split { 
+    display: flex; 
+    flex-direction: row; /* Đảm bảo xếp hàng ngang */
+    flex: 1; 
+    overflow: hidden; 
+}
 
 /* MAP */
-.map-pane { flex: 1; position: relative; overflow: hidden; background: var(--secondary); }
+.map-pane { 
+    flex: 1; 
+    position: relative; 
+    overflow: hidden; 
+    background: var(--secondary); 
+    order: 2;
+}
 .map-pane iframe { width: 100%; height: 100%; border: none; display: block; }
 .map-pane .leaflet-container { position: relative; z-index: 0 !important; }
 .map-pane .leaflet-pane,
@@ -108,9 +119,15 @@ body { font-family: 'Be Vietnam Pro', sans-serif; background: var(--bg); color: 
 
 /* LIST PANE */
 .list-pane {
-    width: 388px; flex-shrink: 0;
-    background: var(--bg); border-left: 1px solid var(--border);
-    display: flex; flex-direction: column; overflow: hidden;
+    flex: 0 0 320px; /* Định nghĩa: Không tự giãn, Không tự co, Luôn giữ đúng 640px */
+    width: 640px;
+    
+    background: var(--bg); 
+    border-right: 1px solid var(--border);
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden;
+    order: 1;
 }
 .list-head {
     padding: 14px 18px 12px;
@@ -127,7 +144,15 @@ body { font-family: 'Be Vietnam Pro', sans-serif; background: var(--bg); color: 
     border-radius: 99px; border: 1px solid var(--primary-light);
     flex-shrink: 0;
 }
-.list-scroll { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.list-scroll { 
+    flex: 1; 
+    overflow-y: auto; 
+    padding: 12px; 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    align-content: start;
+}
 
 /* CARD */
 .card {
@@ -239,8 +264,27 @@ body { font-family: 'Be Vietnam Pro', sans-serif; background: var(--bg); color: 
 
 @media (max-width: 768px) {
     .split { flex-direction: column; }
-    .map-pane { flex: none; height: 42vh; }
-    .list-pane { width: 100%; flex: 1; border-left: none; border-top: 1px solid var(--border); }
+    
+    /* Trên di động: Bản đồ nằm trên, chiếm 42% chiều cao màn hình */
+    .map-pane { 
+        flex: none; 
+        height: 42vh; 
+        order: 1; 
+    }
+    
+    /* Trên di động: Danh sách tràn toàn màn hình, chuyển lại thành 1 cột để dễ nhìn */
+    .list-pane { 
+        width: 100%; 
+        flex: 1; 
+        border-right: none; 
+        border-top: 1px solid var(--border); 
+        order: 2; 
+    }
+    
+    .list-scroll {
+        grid-template-columns: 1fr; /* Về lại 1 hàng 1 card trên điện thoại */
+    }
+    
     .topbar { height: auto; flex-wrap: wrap; padding: 10px 14px; gap: 8px; }
     .brand { display: none; }
     .search-group { max-width: 100%; }

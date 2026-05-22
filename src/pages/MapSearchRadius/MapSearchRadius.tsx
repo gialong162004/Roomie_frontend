@@ -6,69 +6,40 @@ import RoomDetail from '../../components/rooms/RoomDetail';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
 
-interface Coords {
-  lat: number;
-  lng: number;
-}
+interface Coords { lat: number; lng: number; }
 
 interface Room {
-  _id: string;
-  title: string;
-  description: string;
-  price: number;
-  city: string;
-  district: string;
-  ward?: string;
-  address: string;
-  superficies?: number;
-  images?: string[];
-  coords?: Coords | null;
-  distance?: number;
-  posterId?: string;
-  posterName?: string;
-  phone?: string;
+  _id: string; title: string; description: string; price: number;
+  city: string; district: string; ward?: string; address: string;
+  superficies?: number; images?: string[]; coords?: Coords | null;
+  distance?: number; posterId?: string; posterName?: string; phone?: string;
 }
 
 interface RoomApiItem {
-  _id: string;
-  title: string;
-  description: string;
-  price: number;
-  city: string;
-  district: string;
-  ward?: string;
-  address: string;
-  superficies?: number;
-  images?: string[];
-  lat?: number | string;
-  lon?: number | string;
-  lng?: number | string;
-  latitude?: number | string;
-  longitude?: number | string;
-  location?: {
-    type?: string;
-    coordinates?: number[];
-    lat?: number | string;
-    lon?: number | string;
-    lng?: number | string;
-    latitude?: number | string;
-    longitude?: number | string;
-  };
+  _id: string; title: string; description: string; price: number;
+  city: string; district: string; ward?: string; address: string;
+  superficies?: number; images?: string[];
+  lat?: number | string; lon?: number | string; lng?: number | string;
+  latitude?: number | string; longitude?: number | string;
+  location?: { type?: string; coordinates?: number[]; lat?: number | string; lon?: number | string; lng?: number | string; latitude?: number | string; longitude?: number | string; };
   distance?: number;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatPrice(p: number): string {
-  if (p >= 1000000) return (p / 1000000).toFixed(1).replace('.0', '') + ' triệu';
+  if (p >= 1_000_000) return (p / 1_000_000).toFixed(1).replace('.0', '') + ' tr';
   return p.toLocaleString() + ' đ';
 }
 
-function formatDistance(distanceKm: number): string {
-  if (distanceKm < 1) return `${Math.round(distanceKm * 1000)} m`;
-  return `${distanceKm.toFixed(1)} km`;
+function formatPriceFull(p: number): string {
+  if (p >= 1_000_000) return (p / 1_000_000).toFixed(1).replace('.0', '') + ' triệu';
+  return p.toLocaleString() + ' đ';
+}
+
+function formatDistance(km: number): string {
+  return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
 }
 
 function getRoomAddress(room: Room): string {
@@ -76,180 +47,205 @@ function getRoomAddress(room: Room): string {
 }
 
 function extractCoords(room: RoomApiItem): Coords | null {
-  const geoCoords = (room.location as any)?.coordinates;
-  if (Array.isArray(geoCoords) && geoCoords.length >= 2) {
-    const lngNum = Number(geoCoords[0]);
-    const latNum = Number(geoCoords[1]);
-    if (Number.isFinite(latNum) && Number.isFinite(lngNum)) {
-      return { lat: latNum, lng: lngNum };
-    }
+  const gc = (room.location as any)?.coordinates;
+  if (Array.isArray(gc) && gc.length >= 2) {
+    const ln = Number(gc[0]), la = Number(gc[1]);
+    if (Number.isFinite(la) && Number.isFinite(ln)) return { lat: la, lng: ln };
   }
   const lat = room.lat ?? room.latitude ?? room.location?.lat ?? room.location?.latitude;
   const lng = room.lng ?? room.lon ?? room.longitude ?? room.location?.lng ?? room.location?.lon ?? room.location?.longitude;
-  const latNum = lat !== undefined ? Number(lat) : NaN;
-  const lngNum = lng !== undefined ? Number(lng) : NaN;
-  if (Number.isFinite(latNum) && Number.isFinite(lngNum)) return { lat: latNum, lng: lngNum };
+  const la = lat !== undefined ? Number(lat) : NaN;
+  const ln = lng !== undefined ? Number(lng) : NaN;
+  if (Number.isFinite(la) && Number.isFinite(ln)) return { lat: la, lng: ln };
   return null;
 }
 
 function normalizeRoom(room: RoomApiItem): Room {
   return {
-    _id: room._id,
-    title: room.title,
-    description: room.description,
-    price: room.price,
-    city: room.city,
-    district: room.district,
-    ward: room.ward,
-    address: room.address,
-    superficies: room.superficies,
-    images: room.images,
-    coords: extractCoords(room),
-    distance: room.distance,
+    _id: room._id, title: room.title, description: room.description,
+    price: room.price, city: room.city, district: room.district, ward: room.ward,
+    address: room.address, superficies: room.superficies, images: room.images,
+    coords: extractCoords(room), distance: room.distance,
     posterId: (room as any).userId?._id ?? (room as any).userId ?? (room as any).posterId,
     posterName: (room as any).userId?.name ?? (room as any).posterName ?? 'Chủ nhà',
-    phone: (room as any).phone ?? (room as any).userId?.phone,                      
+    phone: (room as any).phone ?? (room as any).userId?.phone,
   };
 }
 
-function toRadians(value: number): number {
-  return (value * Math.PI) / 180;
-}
-
-function haversineDistanceKm(from: Coords, to: Coords): number {
-  const R = 6371;
-  const dLat = toRadians(to.lat - from.lat);
-  const dLng = toRadians(to.lng - from.lng);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRadians(from.lat)) * Math.cos(toRadians(to.lat)) * Math.sin(dLng / 2) ** 2;
+function toRad(v: number) { return (v * Math.PI) / 180; }
+function haversineKm(from: Coords, to: Coords): number {
+  const R = 6371, dLat = toRad(to.lat - from.lat), dLng = toRad(to.lng - from.lng);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(from.lat)) * Math.cos(toRad(to.lat)) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function buildCoordsMap(sourceRooms: Room[]): Record<string, Coords> {
-  const coordsMap: Record<string, Coords> = {};
-  for (const room of sourceRooms) {
-    if (room.coords) coordsMap[room._id] = room.coords;
-  }
-  return coordsMap;
 }
 
 function getBrowserLocation(): Promise<Coords> {
   return new Promise((resolve, reject) => {
-    if (!navigator?.geolocation) { reject(new Error('Geolocation not supported')); return; }
+    if (!navigator?.geolocation) { reject(new Error('Not supported')); return; }
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      (err) => reject(err),
-      { enableHighAccuracy: true, timeout: 8000 }
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      reject, { enableHighAccuracy: true, timeout: 8000 }
     );
   });
 }
 
-// ─── SVG Icons ────────────────────────────────────────────────────────────────
-
-const PinIcon = ({ size = 16, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-  </svg>
-);
-
-const SearchIcon = ({ size = 14 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-  </svg>
-);
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const MAPTILER_KEY = import.meta.env.VITE_APIMAP_KEY as string;
-const mapStyle = `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`;
+const MAP_STYLE = `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`;
 const DEFAULT_CENTER: Coords = { lat: 10.8512, lng: 106.7716 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// Bounding box giới hạn khu vực Việt Nam [minLng, minLat, maxLng, maxLat]
+const VIETNAM_BOUNDS: [number, number, number, number] = [102.14, 8.56, 109.46, 23.39];
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function MapSearchRadius() {
-  const [search, setSearch] = useState('');
-  const [radius, setRadius] = useState(5);
+  // State
   const [allRooms, setAllRooms] = useState<Room[]>([]);
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [active, setActive] = useState<string | null>(null);
+  const [visibleRooms, setVisibleRooms] = useState<Room[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [modal, setModal] = useState<Room | null>(null);
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
-  const [distanceByRoomId, setDistanceByRoomId] = useState<Record<string, number>>({});
-  const [coordsByRoomId, setCoordsByRoomId] = useState<Record<string, Coords>>({});
-  const [mapCenter, setMapCenter] = useState<Coords | null>(null);
+  const [coordsMap, setCoordsMap] = useState<Record<string, Coords>>({});
+  const [distMap, setDistMap] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [suggestions, setSuggestions] = useState<Array<{ place_name: string; center: [number, number] }>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
+  // Radius search mode
+  const [radiusMode, setRadiusMode] = useState(false);   // true = đang chọn tâm
+  const [radiusCenter, setRadiusCenter] = useState<Coords | null>(null);
+  const [radiusKm, setRadiusKm] = useState(3);
+  const [radiusActive, setRadiusActive] = useState(false); // đang filter theo bán kính
+
+  // Refs
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<Record<string, maplibregl.Marker>>({});
-  const circleRef = useRef<boolean>(false);
-  const listRef = useRef<HTMLDivElement | null>(null);
-  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const lastCenterRef = useRef<{ coords: Coords; label: string } | null>(null);
-  const allRoomsRef = useRef<Room[]>([]);
   
-  const [suggestions, setSuggestions] = useState<Array<{place_name: string; center: [number, number]}>>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const priceMarkersRef = useRef<Record<string, maplibregl.Marker>>({});
+  
+  const centerMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const allRoomsRef = useRef<Room[]>([]);
+  const coordsMapRef = useRef<Record<string, Coords>>({});
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const listRef = useRef<HTMLDivElement | null>(null);
 
-  // Hàm fetch gợi ý địa điểm
-  const fetchSuggestions = useCallback(async (query: string) => {
-    if (query.trim().length < 2) { setSuggestions([]); return; }
+  // Refs sync inside handlers
+  const radiusCenterRef = useRef<Coords | null>(null);
+  const radiusActiveRef = useRef(false);
+  const radiusKmRef = useRef(3);
 
+  useEffect(() => { radiusCenterRef.current = radiusCenter; }, [radiusCenter]);
+  useEffect(() => { radiusActiveRef.current = radiusActive; }, [radiusActive]);
+  useEffect(() => { radiusKmRef.current = radiusKm; }, [radiusKm]);
+
+  // ── Geocode ──────────────────────────────────────────────────────────────
+  const geocodeAddress = useCallback(async (query: string): Promise<Coords | null> => {
     try {
       const res = await fetch(
-        `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json` +
-        `?key=${MAPTILER_KEY}&language=vi&country=vn&limit=5`
+        `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?key=${MAPTILER_KEY}`
       );
       const data = await res.json();
-      const results = (data?.features ?? []).map((f: any) => ({
-        place_name: f.place_name,
-        center: f.center as [number, number],
-      }));
-      setSuggestions(results);
+      const f = data?.features?.[0];
+      if (!f) return null;
+      return { lng: f.center[0], lat: f.center[1] };
+    } catch { return null; }
+  }, []);
+
+  // ── Fetch suggestions ─────────────────────────────────────────────────────
+  const fetchSuggestions = useCallback(async (q: string) => {
+    if (q.trim().length < 2) { setSuggestions([]); return; }
+    try {
+      const res = await fetch(
+        `https://api.maptiler.com/geocoding/${encodeURIComponent(q)}.json?key=${MAPTILER_KEY}&language=vi&country=vn&limit=5`
+      );
+      const data = await res.json();
+      setSuggestions((data?.features ?? []).map((f: any) => ({ place_name: f.place_name, center: f.center })));
       setShowSuggestions(true);
     } catch { setSuggestions([]); }
   }, []);
 
-  // ── Init MapLibre ──────────────────────────────────────────────────────────
+  // ── Compute which rooms are visible in map viewport ───────────────────────
+  const updateVisibleRooms = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const bounds = map.getBounds();
+    const all = allRoomsRef.current;
+    const cm = coordsMapRef.current;
+
+    let filtered: Room[];
+
+    const rc = radiusCenterRef.current;
+    const ra = radiusActiveRef.current;
+    const rkm = radiusKmRef.current;
+
+    if (ra && rc) {
+      filtered = all.filter(r => {
+        const c = cm[r._id];
+        if (!c) return false;
+        return haversineKm(rc, c) <= rkm;
+      });
+    } else {
+      filtered = all.filter(r => {
+        const c = cm[r._id];
+        if (!c) return false;
+        return bounds.contains([c.lng, c.lat]);
+      });
+    }
+
+    const center = rc && ra ? rc : { lat: map.getCenter().lat, lng: map.getCenter().lng };
+    const distObj: Record<string, number> = {};
+    filtered.forEach(r => {
+      const c = cm[r._id];
+      if (c) distObj[r._id] = haversineKm(center, c);
+    });
+    filtered = [...filtered].sort((a, b) => (distObj[a._id] ?? 999) - (distObj[b._id] ?? 999));
+
+    setVisibleRooms(filtered);
+    setDistMap(distObj);
+  }, []);
+
+  // ── Init Map ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: mapStyle,
+      style: MAP_STYLE,
       center: [DEFAULT_CENTER.lng, DEFAULT_CENTER.lat],
-      zoom: 12,
+      zoom: 13,
+      minZoom: 5, // Giới hạn không cho zoom out quá xa
+      maxBounds: VIETNAM_BOUNDS, // Khóa tầm nhìn map trong giới hạn lãnh thổ VN
     });
 
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
     mapRef.current = map;
 
-    // Cấu hình layers gom cụm sau khi map load style xong
     map.on('load', () => {
-      // 1. Khởi tạo Source trống có cấu hình Cluster hỗ trợ gom cụm
       map.addSource('rooms-source', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
         cluster: true,
-        clusterMaxZoom: 14, // Zoom vượt quá 14 sẽ rã cụm thành phòng đơn lẻ
-        clusterRadius: 50   // Bán kính gom cụm (pixel)
+        clusterMaxZoom: 14,
+        clusterRadius: 55,
       });
 
-      // 2. Layer hiển thị vòng tròn gom cụm (Clusters)
       map.addLayer({
         id: 'clusters-layer',
         type: 'circle',
         source: 'rooms-source',
         filter: ['has', 'point_count'],
         paint: {
-          'circle-color': ['step', ['get', 'point_count'], '#51bbd6', 10, '#f1f075', 30, '#f28cb1'],
-          'circle-radius': ['step', ['get', 'point_count'], 18, 10, 24, 30, 30],
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#fff'
-        }
+          'circle-color': ['step', ['get', 'point_count'], '#FF385C', 10, '#FF385C', 30, '#C13584'],
+          'circle-radius': ['step', ['get', 'point_count'], 22, 10, 28, 30, 34],
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#fff',
+          'circle-opacity': 0.92,
+        },
       });
 
-      // 3. Layer hiển thị text số lượng đè lên vòng tròn gom cụm
       map.addLayer({
         id: 'cluster-count-layer',
         type: 'symbol',
@@ -258,569 +254,494 @@ export default function MapSearchRadius() {
         layout: {
           'text-field': '{point_count}',
           'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-          'text-size': 12
-        }
+          'text-size': 13,
+        },
+        paint: { 'text-color': '#fff' },
       });
 
-      // Sự kiện click vào cụm -> Tự động phóng to thu hẹp vùng nhìn
       map.on('click', 'clusters-layer', async (e) => {
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters-layer'] });
         const clusterId = features[0].properties.cluster_id;
         const source = map.getSource('rooms-source') as maplibregl.GeoJSONSource;
-        
-        // Lấy mức độ zoom tối ưu tiếp theo để rã cụm này ra
         try {
-          const expansionZoom = await new Promise<number>((resolve, reject) => {
-            (source as any).getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
-              if (err) reject(err); else resolve(zoom);
-            });
-          });
-          const coordinates = (features[0].geometry as any).coordinates;
-          map.easeTo({ center: coordinates, zoom: expansionZoom });
-        } catch (err) {
-          console.error(err);
-        }
+          const zoom = await new Promise<number>((res, rej) =>
+            (source as any).getClusterExpansionZoom(clusterId, (err: any, z: number) => err ? rej(err) : res(z))
+          );
+          map.easeTo({ center: (features[0].geometry as any).coordinates, zoom });
+        } catch (err) { console.error(err); }
       });
 
-      // Thay đổi con trỏ chuột khi lướt qua cụm
       map.on('mouseenter', 'clusters-layer', () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'clusters-layer', () => { map.getCanvas().style.cursor = ''; });
+
+      map.addSource('radius-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({ id: 'radius-fill', type: 'fill', source: 'radius-source', paint: { 'fill-color': '#FF385C', 'fill-opacity': 0.06 } });
+      map.addLayer({ id: 'radius-border', type: 'line', source: 'radius-source', paint: { 'line-color': '#FF385C', 'line-width': 2, 'line-dasharray': [5, 3] } });
     });
 
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
-  }, []);
+    const handleViewChange = () => updateVisibleRooms();
+    map.on('moveend', handleViewChange);
+    map.on('zoomend', handleViewChange);
 
-  // ── Vẽ/xóa circle bán kính ────────────────────────────────────────────────
-  const drawCircle = useCallback((center: Coords, radiusKm: number) => {
+    return () => { map.remove(); mapRef.current = null; };
+  }, [updateVisibleRooms]);
+
+  // ── Draw radius circle on map ─────────────────────────────────────────────
+  const drawRadiusCircle = useCallback((center: Coords, km: number) => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
-
-    const sourceId = 'radius-circle';
-    const layerFillId = 'radius-fill';
-    const layerBorderId = 'radius-border';
-
-    const points = 64;
+    const pts = 64;
     const coords: [number, number][] = [];
-    for (let i = 0; i < points; i++) {
-      const angle = (i / points) * 2 * Math.PI;
-      const dx = (radiusKm / 111.32) * Math.cos(angle);
-      const dy = (radiusKm / (111.32 * Math.cos(center.lat * Math.PI / 180))) * Math.sin(angle);
+    for (let i = 0; i < pts; i++) {
+      const angle = (i / pts) * 2 * Math.PI;
+      const dx = (km / 111.32) * Math.cos(angle);
+      const dy = (km / (111.32 * Math.cos(center.lat * Math.PI / 180))) * Math.sin(angle);
       coords.push([center.lng + dy, center.lat + dx]);
     }
     coords.push(coords[0]);
-
-    const geojson: GeoJSON.Feature<GeoJSON.Polygon> = {
-      type: 'Feature',
-      properties: {},
-      geometry: { type: 'Polygon', coordinates: [coords] },
-    };
-
-    if (map.getSource(sourceId)) {
-      (map.getSource(sourceId) as maplibregl.GeoJSONSource).setData(geojson);
-    } else {
-      map.addSource(sourceId, { type: 'geojson', data: geojson });
-      map.addLayer({
-        id: layerFillId,
-        type: 'fill',
-        source: sourceId,
-        paint: { 'fill-color': '#14B8A6', 'fill-opacity': 0.08 },
-      });
-      map.addLayer({
-        id: layerBorderId,
-        type: 'line',
-        source: sourceId,
-        paint: { 'line-color': '#14B8A6', 'line-width': 2, 'line-dasharray': [6, 4] },
-      });
-      circleRef.current = true;
-    }
+    const src = map.getSource('radius-source') as maplibregl.GeoJSONSource;
+    if (src) src.setData({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [coords] } } as any);
   }, []);
 
-  // ── Cập nhật dữ liệu vào Cluster Source và Quản lý các Marker lẻ ──────────────
+  const clearRadiusCircle = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    const src = map.getSource('radius-source') as maplibregl.GeoJSONSource;
+    if (src) src.setData({ type: 'FeatureCollection', features: [] });
+    centerMarkerRef.current?.remove();
+    centerMarkerRef.current = null;
+  }, []);
+
+  // ── Place center pin marker ───────────────────────────────────────────────
+  const placeCenterMarker = useCallback((center: Coords) => {
+    const map = mapRef.current;
+    if (!map) return;
+    centerMarkerRef.current?.remove();
+
+    const el = document.createElement('div');
+    el.style.cssText = `
+      width:20px;height:20px;border-radius:50%;
+      background:#FF385C;border:3px solid #fff;
+      box-shadow:0 0 0 4px rgba(255,56,92,0.25);
+      cursor:grab;
+    `;
+    centerMarkerRef.current = new maplibregl.Marker({ element: el, draggable: true })
+      .setLngLat([center.lng, center.lat])
+      .addTo(map);
+
+    centerMarkerRef.current.on('dragend', () => {
+      const lnglat = centerMarkerRef.current!.getLngLat();
+      const newCenter = { lat: lnglat.lat, lng: lnglat.lng };
+      radiusCenterRef.current = newCenter;
+      setRadiusCenter(newCenter);
+      drawRadiusCircle(newCenter, radiusKmRef.current);
+      fitToRadius(newCenter, radiusKmRef.current);
+      updateVisibleRooms();
+    });
+  }, [drawRadiusCircle, updateVisibleRooms]);
+
+  // ── Map click handler for radius mode ────────────────────────────────────
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    const updateMapData = () => {
-      const source = map.getSource('rooms-source') as maplibregl.GeoJSONSource;
-      if (!source) return;
+    const handleClick = (e: maplibregl.MapMouseEvent) => {
+      if (!radiusModeRef.current) return;
+      const center = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+      setRadiusCenter(center);
+      radiusCenterRef.current = center;
+      setRadiusActive(true);
+      radiusActiveRef.current = true;
+      setRadiusMode(false);
+      radiusModeRef.current = false;
+      map.getCanvas().style.cursor = '';
+      placeCenterMarker(center);
+      drawRadiusCircle(center, radiusKmRef.current);
+      fitToRadius(center, radiusKmRef.current);
+      updateVisibleRooms();
+    };
 
-      // 1. Chuyển đổi danh sách phòng thành dữ liệu chuẩn GeoJSON gửi vào Source gom cụm
-      const features = rooms
-        .filter(room => coordsByRoomId[room._id])
-        .map(room => {
-          const coords = coordsByRoomId[room._id];
-          return {
-            type: 'Feature' as const,
-            properties: { roomId: room._id },
-            geometry: { type: 'Point' as const, coordinates: [coords.lng, coords.lat] }
-          };
-        });
+    map.on('click', handleClick);
+    return () => { map.off('click', handleClick); };
+  }, [drawRadiusCircle, placeCenterMarker, updateVisibleRooms]);
 
+  const radiusModeRef = useRef(false);
+  useEffect(() => {
+    radiusModeRef.current = radiusMode;
+    const map = mapRef.current;
+    if (map) map.getCanvas().style.cursor = radiusMode ? 'crosshair' : '';
+  }, [radiusMode]);
+
+  const fitToRadius = (center: Coords, km: number) => {
+    const map = mapRef.current;
+    if (!map) return;
+    const delta = km / 111.32;
+    map.fitBounds(
+      [[center.lng - delta, center.lat - delta], [center.lng + delta, center.lat + delta]],
+      { padding: 60, duration: 500 }
+    );
+  };
+
+  // ── Update radius when slider changes ────────────────────────────────────
+  useEffect(() => {
+    if (radiusActive && radiusCenter) {
+      drawRadiusCircle(radiusCenter, radiusKm);
+      fitToRadius(radiusCenter, radiusKm);
+      updateVisibleRooms();
+    }
+  }, [radiusKm, radiusActive, radiusCenter, drawRadiusCircle, updateVisibleRooms]);
+
+  // ── Fetch all rooms ───────────────────────────────────────────────────────
+  useEffect(() => {
+    const fetch_ = async () => {
+      setLoading(true);
+      try {
+        // Cố gắng đặt query limit siêu lớn để lấy tối đa danh sách phòng
+        const res = (await PostAPI.getPost({ limit: 10000, size: 10000, per_page: 10000, page: 1 })) as any;
+        const posts = Array.isArray(res?.content) ? res.content
+          : Array.isArray(res?.data?.content) ? res.data.content : [];
+        const mapped = posts.filter((p: RoomApiItem) => p?._id && p?.address).map(normalizeRoom);
+        allRoomsRef.current = mapped;
+        setAllRooms(mapped);
+
+        const cm: Record<string, Coords> = {};
+        for (const r of mapped) { if (r.coords) cm[r._id] = r.coords; }
+
+        const missing = mapped.filter((r: Room) => !cm[r._id]);
+        for (const r of missing) {
+          const c = await geocodeAddress(`${getRoomAddress(r)}, Việt Nam`);
+          if (c) cm[r._id] = c;
+        }
+
+        coordsMapRef.current = cm;
+        setCoordsMap({ ...cm });
+        updateVisibleRooms();
+      } catch (err) { console.error(err); }
+      finally { setLoading(false); }
+    };
+    fetch_();
+  }, [geocodeAddress, updateVisibleRooms]);
+
+
+  // ── KIỂM SOÁT ĐỒNG BỘ MARKER NÂNG CAO ─────────────────────────────────────────
+
+  // 1. Chỉ nạp dữ liệu GeoJSON mới vào source mỗi khi visibleRooms thay đổi.
+  // Quá trình tính toán Cluster sẽ được maplibregl chạy ngầm sau bước này.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const source = map.getSource('rooms-source') as maplibregl.GeoJSONSource;
+    if (source && map.isStyleLoaded()) {
+      const features = visibleRooms
+        .filter(r => coordsMap[r._id])
+        .map(r => ({
+          type: 'Feature' as const,
+          properties: { roomId: r._id },
+          geometry: { type: 'Point' as const, coordinates: [coordsMap[r._id].lng, coordsMap[r._id].lat] },
+        }));
       source.setData({ type: 'FeatureCollection', features });
+    }
+  }, [visibleRooms, coordsMap]);
 
-      // 2. Dọn dẹp các Marker HTML cũ không nằm trong danh sách phòng mới
-      Object.keys(markersRef.current).forEach((id) => {
-        if (!coordsByRoomId[id]) {
-          markersRef.current[id].remove();
-          delete markersRef.current[id];
+  // 2. Chịu trách nhiệm render/update HTML Markers dựa trên trạng thái Cluster thực tế
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const renderMarkers = () => {
+      if (!map.isStyleLoaded()) return;
+
+      // ĐÂY LÀ ĐIỂM QUYẾT ĐỊNH: Phải đợi source tính toán Cluster (gom cụm, load tile) xong 100%
+      // Nếu map.isSourceLoaded() đang false có nghĩa là dữ liệu đang nạp, querySourceFeatures sẽ luôn rỗng ([])
+      // Ta bỏ qua vòng lặp lúc này để tránh việc marker bị xóa sạch một cách oan uổng.
+      const isLoaded = map.getSource('rooms-source') && map.isSourceLoaded('rooms-source');
+      if (!isLoaded) return;
+
+      const currentFeatures = map.querySourceFeatures('rooms-source');
+      const activeIdsInView: Record<string, boolean> = {};
+
+      currentFeatures.forEach(f => {
+        if (f.properties && !f.properties.point_count && f.properties.roomId) {
+          const roomId: string = f.properties.roomId;
+          activeIdsInView[roomId] = true;
+          
+          const room = allRoomsRef.current.find(r => r._id === roomId);
+          const coords = coordsMapRef.current[roomId];
+          if (!room || !coords) return;
+
+          const isActive = activeId === roomId;
+
+          // Cập nhật DOM tự nhiên của Marker nếu đã có
+          if (priceMarkersRef.current[roomId]) {
+            const markerInstance = priceMarkersRef.current[roomId];
+            const el = markerInstance.getElement();
+            el.style.background = isActive ? '#222222' : '#ffffff';
+            el.style.color = isActive ? '#ffffff' : '#222222';
+            el.style.border = `1.5px solid ${isActive ? '#222222' : 'rgba(0,0,0,0.15)'}`;
+            el.style.zIndex = isActive ? '9999' : '1';
+            return;
+          }
+
+          // Khởi tạo mới
+          const el = document.createElement('div');
+          el.textContent = formatPrice(room.price) + '/th';
+          el.style.cssText = `
+            background: ${isActive ? '#222222' : '#ffffff'};
+            color: ${isActive ? '#ffffff' : '#222222'};
+            font-size: 12px; font-weight: 700;
+            padding: 4px 8px; border-radius: 28px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.05);
+            cursor: pointer; white-space: nowrap;
+            border: 1.5px solid ${isActive ? '#222222' : 'rgba(0,0,0,0.15)'};
+            box-sizing: border-box;
+            transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+            z-index: ${isActive ? '9999' : '1'};
+            height: 26px; display: flex; align-items: center; justify-content: center;
+          `;
+
+          const popup = new maplibregl.Popup({ offset: 12, closeButton: false, maxWidth: '260px', className: 'airbnb-popup' })
+            .setHTML(`
+              <div style="font-family:inherit;cursor:pointer;border-radius:12px;overflow:hidden" onclick="window.__openRoomModal('${room._id}')">
+                ${room.images?.[0] ? `<img src="${room.images[0]}" alt="${room.title}" style="width:100%;height:100px;object-fit:cover;display:block"/>` : ''}
+                <div style="padding:10px 12px">
+                  <div style="font-weight:700;font-size:13px;line-height:1.3;margin-bottom:4px">${room.title}</div>
+                  <div style="font-size:11px;color:#717171;margin-bottom:6px">📍 ${room.district}, ${room.city}</div>
+                  <div style="font-weight:700;color:#222;font-size:13px">${formatPriceFull(room.price)}<span style="font-weight:400;color:#717171;font-size:11px">/tháng</span></div>
+                </div>
+              </div>
+            `);
+
+          const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+            .setLngLat([coords.lng, coords.lat])
+            .setPopup(popup)
+            .addTo(map);
+
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setActiveId(roomId);
+            cardRefs.current[roomId]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          });
+
+          el.addEventListener('mouseenter', () => { if (activeId !== roomId) el.style.background = '#f7f7f7'; });
+          el.addEventListener('mouseleave', () => { if (activeId !== roomId) el.style.background = '#ffffff'; });
+
+          priceMarkersRef.current[roomId] = marker;
         }
       });
 
-      // 3. Lắng nghe sự kiện di chuyển bản đồ để vẽ Marker HTML cho những điểm ĐÃ RÃ CỤM (Phòng đơn lẻ)
-      const renderSingleMarkers = () => {
-        const currentFeatures = map.querySourceFeatures('rooms-source');
-        const activeIdsInView: Record<string, boolean> = {};
-
-        currentFeatures.forEach((f) => {
-          // Chỉ vẽ marker lẻ cho những điểm KHÔNG PHẢI là cụm lớn (point_count không tồn tại)
-          if (f.properties && !f.properties.point_count && f.properties.roomId) {
-            const roomId = f.properties.roomId;
-            activeIdsInView[roomId] = true;
-            const room = rooms.find(r => r._id === roomId);
-            const coords = coordsByRoomId[roomId];
-
-            if (!room || !coords) return;
-
-            const isActive = active === roomId;
-
-            // Nếu marker đã được vẽ, chỉ cần cập nhật trạng thái màu sắc chủ đạo
-            if (markersRef.current[roomId]) {
-              const el = markersRef.current[roomId].getElement();
-              el.style.background = isActive ? '#ef4444' : '#14B8A6';
-              return;
-            }
-
-            // Tạo phần tử DOM tùy chỉnh cho Ghim Phòng
-            const el = document.createElement('div');
-            el.style.cssText = `
-              width: 32px; height: 32px; border-radius: 50% 50% 50% 0;
-              background: ${isActive ? '#ef4444' : '#14B8A6'};
-              border: 2px solid #fff;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-              cursor: pointer;
-              transform: rotate(-45deg);
-              transition: background 0.2s;
-            `;
-
-            // Đoạn mã Popup hiển thị thông tin nhanh
-            const distKm = distanceByRoomId[roomId];
-            const popup = new maplibregl.Popup({ offset: 25, closeButton: true, maxWidth: '240px' })
-              .setHTML(`
-                <div style="font-family:inherit;padding:4px;cursor:pointer" onclick="window.__openRoomModal('${room._id}')">
-                  ${room.images?.[0] ? `<img src="${room.images[0]}" alt="${room.title}" style="width:100%;height:90px;object-fit:cover;border-radius:6px;margin-bottom:8px;display:block"/>` : ''}
-                  <div style="font-weight:700;font-size:13px;margin-bottom:3px;line-height:1.3">${room.title}</div>
-                  <div style="font-size:11px;color:#64748b;margin-bottom:6px">📍 ${room.district}, ${room.city}</div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f1f5f9;padding-top:6px">
-                    <span style="font-weight:700;color:#0D9488;font-size:13px">${formatPrice(room.price)}<span style="font-weight:400;color:#94a3b8;font-size:11px">/tháng</span></span>
-                    ${distKm !== undefined ? `<span style="font-size:11px;color:#fff;background:#14B8A6;border-radius:20px;padding:2px 7px">${formatDistance(distKm)}</span>` : ''}
-                  </div>
-                </div>
-              `);
-
-            const marker = new maplibregl.Marker({ element: el })
-              .setLngLat([coords.lng, coords.lat])
-              .setPopup(popup)
-              .addTo(map);
-
-            el.addEventListener('click', () => {
-              setActive(roomId);
-              cardRefs.current[roomId]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            });
-
-            markersRef.current[roomId] = marker;
-          }
-        });
-
-        // Xóa các marker đã khuất màn hình hoặc bị gộp lại thành cụm khi zoom out ra ngoài xa
-        Object.keys(markersRef.current).forEach((id) => {
-          if (!activeIdsInView[id]) {
-            markersRef.current[id].remove();
-            delete markersRef.current[id];
-          }
-        });
-      };
-
-      // Đăng ký sự kiện cập nhật marker liên tục khi di chuyển camera bản đồ
-      map.on('moveend', renderSingleMarkers);
-      map.on('zoomend', renderSingleMarkers);
-      renderSingleMarkers(); // Chạy lần đầu tiên liền luôn
+      // Xóa marker không còn nằm trong danh sách Rendered (hoặc đã bị thu vào cụm)
+      Object.keys(priceMarkersRef.current).forEach(id => {
+        if (!activeIdsInView[id]) {
+          priceMarkersRef.current[id].remove();
+          delete priceMarkersRef.current[id];
+        }
+      });
     };
 
-    if (map.isStyleLoaded()) {
-      updateMapData();
-    } else {
-      map.once('load', updateMapData);
-    }
-  }, [rooms, coordsByRoomId, active, distanceByRoomId]);
+    // Lắng nghe sự kiện render của maplibre. 
+    // Nó bao phủ cả lúc kéo map, lướt qua map, hay khi cluster vừa tính toán xong.
+    map.on('render', renderMarkers);
+    renderMarkers(); // Gọi thử lần đầu khi load component
 
-  // ── Fly to khi chọn room ──────────────────────────────────────────────────
-  useEffect(() => {
-    if (!active || !mapRef.current) return;
-    const coords = coordsByRoomId[active];
-    if (coords) {
-      mapRef.current.flyTo({ center: [coords.lng, coords.lat], zoom: 15, duration: 800 });
-    }
-  }, [active, coordsByRoomId]);
+    return () => {
+      map.off('render', renderMarkers);
+    };
+  }, [activeId]);
 
+
+  // ── Fly to active room ────────────────────────────────────────────────────
   useEffect(() => {
-    (window as any).__openRoomModal = (roomId: string) => {
-      const room = allRooms.find(r => r._id === roomId) ?? rooms.find(r => r._id === roomId);
+    if (!activeId || !mapRef.current) return;
+    const c = coordsMap[activeId];
+    if (c) mapRef.current.flyTo({ center: [c.lng, c.lat], zoom: 15, duration: 700 });
+  }, [activeId, coordsMap]);
+
+  // ── Modal global ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    (window as any).__openRoomModal = (id: string) => {
+      const room = allRooms.find(r => r._id === id);
       if (room) setModal(room);
     };
     return () => { delete (window as any).__openRoomModal; };
-  }, [allRooms, rooms]);
+  }, [allRooms]);
 
-  // ── Fit bounds khi mapCenter thay đổi ────────────────────────────────────
-  useEffect(() => {
-    if (!mapCenter || !mapRef.current) return;
-    const map = mapRef.current;
-    const km = radius;
-    const delta = km / 111.32;
-    const bounds: maplibregl.LngLatBoundsLike = [
-      [mapCenter.lng - delta, mapCenter.lat - delta],
-      [mapCenter.lng + delta, mapCenter.lat + delta],
-    ];
-
-    const fitOrDraw = () => {
-      map.fitBounds(bounds, { padding: 40, duration: 600 });
-      drawCircle(mapCenter, km);
-    };
-
-    if (map.isStyleLoaded()) {
-      fitOrDraw();
-    } else {
-      map.once('load', fitOrDraw);
-    }
-  }, [mapCenter, radius, drawCircle]);
-
-  // ── geocodeAddress ─────────────────────────────────────────────────────────
-  const geocodeAddress = useCallback(async (query: string): Promise<Coords | null> => {
-    try {
-      const resp = await fetch(
-        `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?key=${MAPTILER_KEY}`
-      );
-      const data = await resp.json();
-      const feature = data?.features?.[0];
-      if (!feature) return null;
-
-      return { lng: feature.center[0], lat: feature.center[1] };
-    } catch (error) {
-      console.error("Lỗi tìm kiếm tọa độ:", error);
-      return null;
-    }
-  }, []);
-
-  // ── fetchRooms ─────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const fetchRooms = async () => {
-      try {
-        const res = (await PostAPI.getPost()) as any;
-        const posts = Array.isArray(res?.content)
-          ? res.content
-          : Array.isArray(res?.data?.content)
-            ? res.data.content
-            : [];
-        const mapped = posts
-          .filter((p: RoomApiItem) => p?._id && p?.address)
-          .map((p: RoomApiItem) => normalizeRoom(p));
-        setAllRooms(mapped);
-        setRooms(mapped);
-        allRoomsRef.current = mapped;
-
-        const initialCoordsMap = buildCoordsMap(mapped);
-        setCoordsByRoomId(initialCoordsMap);
-
-        const roomsNeedGeocode = mapped.filter((r: Room) => !initialCoordsMap[r._id]);
-        if (roomsNeedGeocode.length > 0) {
-          const extraCoordsMap: Record<string, Coords> = { ...initialCoordsMap };
-          for (const room of roomsNeedGeocode) {
-            const coords = await geocodeAddress(`${getRoomAddress(room)}, Việt Nam`);
-            if (coords) extraCoordsMap[room._id] = coords;
-          }
-          setCoordsByRoomId({ ...extraCoordsMap });
-        }
-        setDistanceByRoomId({});
-      } catch (err) {
-        console.error('[fetchRooms]', err);
-      }
-    };
-    fetchRooms();
-  }, [geocodeAddress]);
-
-  // ── searchWithCenter ───────────────────────────────────────────────────────
-  const searchWithCenter = useCallback(async (
-    center: Coords,
-    label: string,
-    rememberCenter = true
-  ) => {
-    setSearchError(null);
-    setActive(null);
-    setSearching(true);
-    setMapCenter(center);
-
-    try {
-      const res = await PostAPI.getNearbyPosts({
-        lat: center.lat,
-        lng: center.lng,
-        maxDistance: radius * 1000,
-        page: 1,
-        limit: 20,
-      }) as any;
-
-      const posts = Array.isArray(res?.content)
-        ? res.content
-        : Array.isArray(res?.data?.content)
-          ? res.data.content
-          : Array.isArray(res) ? res : [];
-
-      const mapped: Room[] = posts
-        .filter((p: RoomApiItem) => p?._id && p?.address)
-        .map((p: RoomApiItem) => normalizeRoom(p));
-
-      if (!mapped.length) {
-        setRooms([]);
-        setDistanceByRoomId({});
-        setCoordsByRoomId({});
-        if (rememberCenter) lastCenterRef.current = { coords: center, label };
-        return;
-      }
-
-      setAllRooms(mapped);
-      setRooms(mapped);
-
-      const distanceMap: Record<string, number> = {};
-      const coordsMap: Record<string, Coords> = {};
-
-      for (const room of mapped) {
-        const cachedRoom = allRoomsRef.current.find(r => r._id === room._id);
-        let coords = room.coords ?? cachedRoom?.coords ?? null;
-        if (!coords) {
-          coords = await geocodeAddress(`${getRoomAddress(room)}, Việt Nam`);
-        }
-        if (coords) coordsMap[room._id] = coords;
-
-        let distanceKm: number | null = null;
-        if (room.distance !== undefined && room.distance !== null) {
-          const raw = Number(room.distance);
-          if (Number.isFinite(raw)) distanceKm = raw > 50 ? raw / 1000 : raw;
-        }
-        if (distanceKm === null && coords) distanceKm = haversineDistanceKm(center, coords);
-        if (distanceKm !== null && Number.isFinite(distanceKm)) distanceMap[room._id] = distanceKm;
-      }
-
-      const sorted = [...mapped].sort(
-        (a, b) => (distanceMap[a._id] ?? Infinity) - (distanceMap[b._id] ?? Infinity)
-      );
-      setRooms(sorted);
-      setDistanceByRoomId(distanceMap);
-      setCoordsByRoomId(prev => ({ ...prev, ...coordsMap }));
-      if (rememberCenter) lastCenterRef.current = { coords: center, label };
-    } catch (err) {
-      console.error('[searchWithCenter]', err);
-      setSearchError('Không thể tìm phòng gần vị trí này. Vui lòng thử lại.');
-    } finally {
-      setSearching(false);
-    }
-  }, [radius, geocodeAddress]);
-
+  // ── Search handlers ───────────────────────────────────────────────────────
   const handleSearch = async () => {
-    const keyword = search.trim();
-    if (!keyword) {
-      if (lastCenterRef.current) {
-        await searchWithCenter(lastCenterRef.current.coords, lastCenterRef.current.label, false);
-      } else {
-        setRooms(allRooms);
-        setDistanceByRoomId({});
-        setCoordsByRoomId(buildCoordsMap(allRooms));
-      }
-      return;
-    }
-    const alreadyHasVN = /việt\s*nam/i.test(keyword);
-    const cleanedQuery = (alreadyHasVN ? keyword : `${keyword}, Việt Nam`)
+    const kw = searchText.trim();
+    if (!kw) return;
+    const clean = ((/việt\s*nam/i.test(kw) ? kw : `${kw}, Việt Nam`)
       .replace(/\bĐ\.\s*/gi, 'Đường ')
       .replace(/\bP\.\s*/gi, 'Phường ')
       .replace(/\bQ\.\s*/gi, 'Quận ')
-      .replace(/\bTX\.\s*/gi, 'Thị xã ')
       .replace(/\bTP\.\s*/gi, 'Thành phố ')
-      .replace(/\s+/g, ' ').trim();
-
-    const center = await geocodeAddress(cleanedQuery);
-    if (!center) {
-      setRooms([]);
-      setDistanceByRoomId({});
-      setCoordsByRoomId({});
-      setSearchError('Không xác định được vị trí. Vui lòng nhập cụ thể hơn.');
-      return;
-    }
-    await searchWithCenter(center, keyword);
+      .replace(/\s+/g, ' ').trim());
+    const center = await geocodeAddress(clean);
+    if (!center || !mapRef.current) return;
+    mapRef.current.flyTo({ center: [center.lng, center.lat], zoom: 14, duration: 700 });
+    setTimeout(updateVisibleRooms, 800);
   };
 
-  const handleUseMyLocation = async () => {
+  const handleMyLocation = async () => {
     try {
       const coords = await getBrowserLocation();
-      setSearch('');
-      await searchWithCenter(coords, 'Vị trí của bạn');
-    } catch {
-      setSearchError('Không lấy được vị trí. Hãy cho phép truy cập và thử lại.');
-    }
+      mapRef.current?.flyTo({ center: [coords.lng, coords.lat], zoom: 14, duration: 700 });
+      setTimeout(updateVisibleRooms, 800);
+    } catch { alert('Không lấy được vị trí. Hãy cho phép truy cập vị trí.'); }
   };
 
-  useEffect(() => {
-    if (!lastCenterRef.current) return;
-    void searchWithCenter(lastCenterRef.current.coords, lastCenterRef.current.label, false);
-  }, [radius]);
-
-  const handleSelectRoom = (roomId: string) => {
-    setActive(roomId);
-    cardRefs.current[roomId]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  const cancelRadius = () => {
+    setRadiusMode(false);
+    setRadiusActive(false);
+    setRadiusCenter(null);
+    radiusCenterRef.current = null;
+    radiusActiveRef.current = false;
+    clearRadiusCircle();
+    updateVisibleRooms();
   };
 
   return (
     <>
-      <div className="app">
-        {/* TOP BAR */}
-        <div className="topbar">
-          <div className="brand">
-            <div className="brand-badge"><PinIcon size={14} color="#334155" /></div>
-            Tìm phòng trọ
-          </div>
+      <div style={{ display: 'flex', height: '100vh', fontFamily: "'Circular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", overflow: 'hidden' }}>
 
-          <div className="search-group">
-            <div className="search-wrap" style={{ position: 'relative' }}>
-              <span className="ico"><SearchIcon size={14} /></span>
+        {/* ── LEFT: Room list ─────────────────────────────────────────────── */}
+        <div style={{ width: 460, minWidth: 360, display: 'flex', flexDirection: 'column', background: '#fff', borderRight: '1px solid #ebebeb', zIndex: 2, overflow: 'hidden' }}>
+          {/* Search bar */}
+          <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #ebebeb', background: '#fff' }}>
+            <div style={{ position: 'relative' }}>
               <input
-                className="s-input"
-                type="text"
-                value={search}
+                value={searchText}
                 onChange={e => {
-                  setSearch(e.target.value);
+                  setSearchText(e.target.value);
                   if (debounceRef.current) clearTimeout(debounceRef.current);
                   debounceRef.current = setTimeout(() => fetchSuggestions(e.target.value), 300);
                 }}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                 onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                placeholder="Nhập trường, quận... VD: UTE, Thủ Đức, Bách Khoa"
+                placeholder="Tìm khu vực, trường học..."
+                style={{
+                  width: '100%', padding: '12px 16px 12px 42px',
+                  border: '1px solid #ddd', borderRadius: 10, fontSize: 14,
+                  outline: 'none', boxSizing: 'border-box', background: '#f7f7f7',
+                  transition: 'border 0.2s',
+                }}
+                onFocusCapture={e => { e.currentTarget.style.borderColor = '#222'; e.currentTarget.style.background = '#fff'; }}
+                onBlurCapture={e => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.background = '#f7f7f7'; }}
               />
-              {/* DROPDOWN GỢI Ý */}
+              <svg style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#717171' }} width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+              </svg>
+              {/* Suggestions dropdown */}
               {showSuggestions && suggestions.length > 0 && (
-                <div style={{
-                  position: 'absolute', top: '100%', left: 0, right: 0,
-                  background: 'white', border: '1px solid #e2e8f0',
-                  borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                  zIndex: 9999, marginTop: 4, overflow: 'hidden',
-                }}>
+                <div style={{ position: 'absolute', top: '110%', left: 0, right: 0, background: '#fff', border: '1px solid #ebebeb', borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.15)', zIndex: 9999, overflow: 'hidden' }}>
                   {suggestions.map((s, i) => (
-                    <div
-                      key={i}
+                    <div key={i}
                       onMouseDown={() => {
-                        setSearch(s.place_name);
+                        setSearchText(s.place_name);
                         setShowSuggestions(false);
-                        const center = { lat: s.center[1], lng: s.center[0] };
-                        searchWithCenter(center, s.place_name);
+                        mapRef.current?.flyTo({ center: s.center, zoom: 14, duration: 700 });
+                        setTimeout(updateVisibleRooms, 800);
                       }}
-                      style={{
-                        padding: '10px 14px', cursor: 'pointer',
-                        fontSize: 13, borderBottom: '1px solid #f1f5f9',
-                        display: 'flex', alignItems: 'center', gap: 8,
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'white')}
+                      style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 13, borderBottom: i < suggestions.length - 1 ? '1px solid #f0f0f0' : 'none', display: 'flex', gap: 10, alignItems: 'center', color: '#222' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f7f7f7'}
+                      onMouseLeave={e => e.currentTarget.style.background = '#fff'}
                     >
-                      <span style={{ color: '#14B8A6', flexShrink: 0 }}>📍</span>
-                      <span style={{ color: '#334155' }}>{s.place_name}</span>
+                      <span style={{ color: '#FF385C', fontSize: 16 }}>📍</span>
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.place_name}</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            <div className="radius-group">
-              <input
-                type="range" min="2" max="15" step="1" value={radius}
-                onChange={e => setRadius(+e.target.value)}
-              />
-              <span className="r-val">{radius} km</span>
+
+            {/* Quick action buttons */}
+            <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+              <button onClick={handleMyLocation} style={{ flex: 1, padding: '9px 14px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#222', display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#FF385C"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" /></svg>
+                Vị trí của tôi
+              </button>
+              <button
+                onClick={() => { if (radiusActive) { cancelRadius(); } else { setRadiusMode(r => !r); } }}
+                style={{ flex: 1, padding: '9px 14px', borderRadius: 8, border: `1px solid ${radiusMode || radiusActive ? '#FF385C' : '#ddd'}`, background: radiusMode || radiusActive ? '#fff5f5' : '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: radiusMode || radiusActive ? '#FF385C' : '#222', display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3" /><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" /></svg>
+                {radiusActive ? 'Xóa bán kính' : radiusMode ? 'Chọn điểm trên bản đồ…' : 'Tìm theo bán kính'}
+              </button>
             </div>
-            <button className="btn-find" onClick={handleSearch}>
-              <SearchIcon size={13} /> Tìm kiếm
-            </button>
-            <button className="btn-find" onClick={handleUseMyLocation}>
-              <PinIcon size={13} /> Dùng vị trí của tôi
-            </button>
+
+            {/* Radius slider */}
+            {(radiusMode || radiusActive) && (
+              <div style={{ marginTop: 10, padding: '10px 12px', background: '#fff5f5', borderRadius: 10, border: '1px solid #ffd6d6' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12, color: '#717171' }}>
+                  <span style={{ fontWeight: 600, color: '#FF385C' }}>
+                    {radiusMode ? '👆 Click vào bản đồ để chọn tâm' : `📍 Bán kính tìm kiếm`}
+                  </span>
+                  {radiusActive && <span style={{ fontWeight: 700, color: '#222' }}>{radiusKm} km</span>}
+                </div>
+                {radiusActive && (
+                  <input type="range" min="1" max="15" step="0.5" value={radiusKm}
+                    onChange={e => setRadiusKm(+e.target.value)}
+                    style={{ width: '100%', accentColor: '#FF385C' }}
+                  />
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="count-pill">{rooms.length}/{allRooms.length} phòng</div>
+          {/* Room count header */}
+          <div style={{ padding: '14px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#222', letterSpacing: '-0.3px' }}>
+                {loading ? 'Đang tải…' : `${visibleRooms.length} phòng`}
+              </div>
+              <div style={{ fontSize: 12, color: '#717171', marginTop: 2 }}>
+                {radiusActive && radiusCenter ? `Trong bán kính ${radiusKm} km` : 'Trong khu vực bản đồ hiện tại'}
+              </div>
+            </div>
+            {!loading && visibleRooms.length > 0 && (
+              <div style={{ fontSize: 11, color: '#717171', padding: '4px 10px', background: '#f7f7f7', borderRadius: 20 }}>
+                {allRooms.length} tổng
+              </div>
+            )}
+          </div>
+
+          {/* Room list */}
+          <div ref={listRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 16px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', alignContent: 'start' }}>
+            {visibleRooms.length === 0 && !loading ? (
+              <div style={{ textAlign: 'center', padding: '48px 24px', color: '#717171', gridColumn: '1 / -1' }}>
+                Không tìm thấy phòng trong khu vực này.
+              </div>
+            ) : (
+              visibleRooms.map(room => (
+                <div
+                  key={room._id}
+                  ref={el => { cardRefs.current[room._id] = el; }}
+                  onClick={() => setActiveId(room._id)}
+                  style={{
+                    cursor: 'pointer',
+                    outline: activeId === room._id ? '2px solid #222' : 'none',
+                    borderRadius: 12, transition: 'outline 0.1s'
+                  }}
+                >
+                  <RoomCardHome
+                    _id={room._id}
+                    image={room.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
+                    type={room.title}
+                    area={room.superficies ? `${room.superficies} m²` : undefined}
+                    address={getRoomAddress(room)}
+                    price={formatPriceFull(room.price)}
+                    badge={distMap[room._id] !== undefined ? formatDistance(distMap[room._id]) : undefined}
+                    onView={() => { setActiveId(room._id); setModal(room); }}
+                  />
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
-        {/* SPLIT LAYOUT */}
-        <div className="split">
-          {/* MAP */}
-          <div className="map-pane">
-            <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
-          </div>
-
-          {/* LIST */}
-          <div className="list-pane">
-            <div className="list-head">
-              <div>
-                <h2>Danh sách phòng trọ</h2>
-                <p>
-                  {rooms.length > 0
-                    ? `${rooms.length} phòng${search ? ` gần "${search}"` : ' trong khu vực'}`
-                    : 'Không tìm thấy phòng phù hợp'}
-                </p>
-                {searching && <p>Đang tính khoảng cách...</p>}
-                {searchError && <p style={{ color: '#ef4444' }}>{searchError}</p>}
-              </div>
-              <div className="lcount">{rooms.length} phòng</div>
-            </div>
-
-            <div className="list-scroll" ref={listRef}>
-              {rooms.length === 0 ? (
-                <div className="empty">
-                  <div className="empty-ico"><PinIcon size={24} color="#14B8A6" /></div>
-                  <h3>Không tìm thấy phòng trọ</h3>
-                  <p>Thử tăng bán kính hoặc thay đổi địa điểm tìm kiếm.</p>
-                </div>
-              ) : (
-                <div className="room-grid">
-                  {rooms.map((room) => (
-                    <div
-                      key={room._id}
-                      ref={el => { cardRefs.current[room._id] = el; }}
-                      onClick={() => {
-                        handleSelectRoom(room._id);
-                      }}
-                      style={{
-                        outline: active === room._id ? '2px solid #14B8A6' : '2px solid transparent',
-                        borderRadius: 12,
-                        transition: 'outline 0.15s',
-                      }}
-                    >
-                      <RoomCardHome
-                        _id={room._id}
-                        image={room.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
-                        type={room.title}
-                        area={room.superficies ? `${room.superficies} m²` : undefined}
-                        address={getRoomAddress(room)}
-                        price={formatPrice(room.price)}
-                        badge={distanceByRoomId[room._id] !== undefined
-                          ? formatDistance(distanceByRoomId[room._id])
-                          : undefined}
-                        onView={() => {
-                          handleSelectRoom(room._id);
-                          setModal(room);
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+        {/* ── RIGHT: Map Pane ─────────────────────────────────────────────── */}
+        <div style={{ flex: 1, position: 'relative', height: '100%' }}>
+          <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
         </div>
       </div>
 
@@ -832,8 +753,8 @@ export default function MapSearchRadius() {
           type={modal.title}
           area={modal.superficies ? `${modal.superficies} m²` : undefined}
           address={getRoomAddress(modal)}
-          price={formatPrice(modal.price)}
-          badge={distanceByRoomId[modal._id] !== undefined ? formatDistance(distanceByRoomId[modal._id]) : undefined}
+          price={formatPriceFull(modal.price)}
+          badge={distMap[modal._id] !== undefined ? formatDistance(distMap[modal._id]) : undefined}
           description={modal.description}
           posterId={modal.posterId}
           posterName={modal.posterName}
@@ -842,5 +763,5 @@ export default function MapSearchRadius() {
         />
       )}
     </>
-  ); 
+  );
 }

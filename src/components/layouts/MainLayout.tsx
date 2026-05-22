@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import ChatWidget from "../chat/ChatWidget";
+import BotChatWidget from "../chat/BotChatWidget";
 
 const MainLayout = () => {
   return (
@@ -16,6 +17,7 @@ const MainLayout = () => {
         <Footer />
       </footer>
       <ChatWidget />
+      <BotChatWidget /> 
     </div>
   );
 };
