@@ -1,7 +1,17 @@
-import React from "react";
-import { FaRulerCombined, FaMapMarkerAlt, FaPhoneAlt, FaUserAlt, FaCommentAlt, FaMap } from "react-icons/fa";
+import React, { useState } from "react";
+import { 
+  FaRulerCombined, 
+  FaMapMarkerAlt, 
+  FaPhoneAlt, 
+  FaUserAlt, 
+  FaCommentAlt, 
+  FaMap, 
+  FaExclamationTriangle 
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useChatStore } from "../../store/chatStore";
+import { PostAPI } from "../../api/api";
+import Toast from "../common/Toast"; // 👈 Thêm import Toast
 
 interface RoomDetailProps {
   postId?: string;
@@ -38,8 +48,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
   const [showMap, setShowMap] = React.useState(false);
+  
+  const [showReportForm, setShowReportForm] = useState(false);
+  const [selectedReason, setSelectedReason] = useState(""); 
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+
+  // 🍞 State quản lý Toast giống page Login của bạn
+  const [toast, setToast] = useState<{ message: string; subtitle: string; type: "success" | "error" | "info" } | null>(null);
+
   const navigate = useNavigate();
   const openChat = useChatStore(state => state.openChat);
+
+  const showToast = (message: string, subtitle: string, type: "success" | "error" | "info") => {
+    setToast({ message, subtitle, type });
+  };
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -58,7 +80,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
 
   const handleStartChat = () => {
     if (!posterId) {
-      alert('Không tìm thấy thông tin người đăng');
+      showToast("Không tìm thấy thông tin", "Không thể bắt đầu cuộc trò chuyện với người đăng", "error");
       return;
     }
     
@@ -72,10 +94,42 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
     });
     
     openChat(posterId, posterName, postLinkData);
-    
     onClose();
   };
 
+  const handleSendReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!postId) {
+      showToast("Lỗi hệ thống", "Không tìm thấy ID bài đăng để báo cáo!", "error");
+      return;
+    }
+    if (!selectedReason) {
+      showToast("Thiếu thông tin", "Vui lòng chọn một lý do báo cáo!", "info");
+      return;
+    }
+
+    try {
+      setIsSubmittingReport(true);
+      
+      const response = await PostAPI.reportPost(postId, selectedReason);
+      
+      if (response.status === 200 || response.status === 201 || response.data) {
+        showToast("Báo cáo thành công!", "Cảm ơn bạn! Báo cáo vi phạm đã được gửi tới ban quản trị.", "success");
+        setSelectedReason("");
+        setTimeout(() => {
+          setShowReportForm(false);
+        }, 1500);
+      }
+    } catch (error: any) {
+      console.error("❌ Lỗi gửi báo cáo lên hệ thống:", error);
+      const errorMessage = error.response?.data?.message || "Gửi báo cáo thất bại. Vui lòng thử lại sau!";
+      showToast(errorMessage, "Hệ thống ghi nhận lỗi", "error");
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
+  // Giữ nguyên chuỗi gốc ban đầu của bạn
   const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
 
   return (
@@ -87,13 +141,26 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
         className="bg-white rounded-2xl shadow-lg max-w-3xl w-full relative my-8"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Nút đóng Modal (X) */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-50 text-textGray font-bold text-2xl hover:text-primary"
+          className="absolute top-4 right-4 z-50 text-textGray font-bold text-2xl hover:text-primary bg-white/80 w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
         >
           ×
         </button>
 
+        {/* Nút Báo cáo bài đăng (!) */}
+        {postId && (
+          <button
+            onClick={() => setShowReportForm(!showReportForm)}
+            title="Báo cáo bài đăng này"
+            className="absolute top-4 right-16 z-50 text-red-500 hover:text-red-700 bg-white/80 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-transform hover:scale-110"
+          >
+            <FaExclamationTriangle size={14} />
+          </button>
+        )}
+
+        {/* Khu vực hiển thị Slide Ảnh */}
         <div className="relative">
           <img src={images[currentImageIndex]} alt={type} className="w-full h-96 object-cover rounded-t-2xl" />
           {badge && (
@@ -124,7 +191,51 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
           )}
         </div>
 
+        {/* Nội dung thông tin chi tiết phòng */}
         <div className="p-6 flex flex-col gap-4">
+          
+          {/* ✅ Khôi phục chuẩn 100% danh sách option cố định ban đầu */}
+          {showReportForm && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 animate-fadeIn transition-all">
+              <h4 className="text-sm font-semibold text-red-700 flex items-center gap-2 mb-2">
+                <FaExclamationTriangle /> Báo cáo bài đăng vi phạm
+              </h4>
+              <form onSubmit={handleSendReport} className="flex flex-col gap-2">
+                <select
+                  value={selectedReason}
+                  onChange={(e) => setSelectedReason(e.target.value)}
+                  className="w-full text-xs p-2 rounded border border-gray-300 text-gray-700 focus:outline-none focus:border-red-500 bg-white"
+                >
+                  <option value="">Lí do báo cáo...</option>
+                  <option value="Spam">Spam</option>
+                  <option value="Lừa đảo">Lừa đảo</option>
+                  <option value="Nội dung không phù hợp">Nội dung không phù hợp</option>
+                  <option value="Tin giả">Tin giả</option>
+                </select>
+
+                <div className="flex justify-end gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReportForm(false);
+                      setSelectedReason("");
+                    }}
+                    className="px-3 py-1 text-xs border border-gray-300 text-gray-600 rounded hover:bg-gray-100 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingReport || !selectedReason}
+                    className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmittingReport ? "Đang gửi..." : "Gửi báo cáo"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
           <div className="flex justify-between items-center text-sm text-textGray">
             <button
               onClick={handlePosterClick}
@@ -175,7 +286,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
             </div>
           )}
 
-          {/* ✅ Nút nhắn tin */}
+          {/* Nút liên hệ & nhắn tin */}
           <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-2 text-textGray">
               <FaPhoneAlt className="text-primary" /> {phone}
@@ -190,6 +301,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 🍞 Hiển thị Toast động ở cuối component */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          subtitle={toast.subtitle}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

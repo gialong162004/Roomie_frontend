@@ -25,7 +25,7 @@ interface RoomDetailType {
   images: string[];
   category?: { id: string; name: string };
   updatedAt: string;
-  owner?: { _id: string; name: string; phone?: string };
+  owner?: { _id: string; name: string; phone?: string }; userId?: { _id: string; name: string; phone?: string };
   superficies?: number;
 }
 
@@ -311,9 +311,9 @@ const RoomList: React.FC<RoomListProps> = ({
           price={selectedRoom.price.toLocaleString()}
           badge={selectedRoom.category?.name || "Đã duyệt"}
           description={selectedRoom.description}
-          posterName={selectedRoom.owner?.name}
-          posterId={selectedRoom.owner?._id}
-          phone={selectedRoom.owner?.phone || "0123 456 789"}
+          posterName={selectedRoom.userId?.name || selectedRoom.owner?.name}
+          posterId={selectedRoom.userId?._id || selectedRoom.owner?._id}
+          phone={selectedRoom.userId?.phone || selectedRoom.owner?.phone || "0123 456 789"}
           postedMinutesAgo={getPostedTimeAgo(selectedRoom.updatedAt)}
           onClose={() => {
             setSelectedRoom(null);

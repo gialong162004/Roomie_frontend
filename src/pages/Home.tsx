@@ -278,9 +278,9 @@ export default function Home() {
           price={formatPrice(selectedRoom.price)}
           badge={selectedRoom.category?.name || "Đã duyệt"}
           description={selectedRoom.description}
-          posterName={selectedRoom.owner?.name}
-          posterId={selectedRoom.owner?._id}
-          phone={selectedRoom.owner?.phone || "0123 456 789"}
+          posterName={selectedRoom.userId?.name || selectedRoom.owner?.name}
+          posterId={selectedRoom.userId?._id || selectedRoom.owner?._id}
+          phone={selectedRoom.userId?.phone || selectedRoom.owner?.phone || "0123 456 789"}
           postedMinutesAgo={getPostedTimeAgo(selectedRoom.updatedAt)}
           onClose={() => { setSelectedRoom(null); setSelectedPostId(null); }}
         />

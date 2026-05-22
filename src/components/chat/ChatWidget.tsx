@@ -802,9 +802,9 @@ const ChatWidget: React.FC = () => {
           price={selectedRoom.price.toLocaleString()}
           badge={selectedRoom.category?.name || "Đã duyệt"}
           description={selectedRoom.description}
-          posterName={selectedRoom.owner?.name}
-          posterId={selectedRoom.owner?._id}
-          phone={selectedRoom.owner?.phone || "Hiển thị để liên hệ"}
+          posterName={selectedRoom.userId?.name || selectedRoom.owner?.name}
+          posterId={selectedRoom.userId?._id || selectedRoom.owner?._id}
+          phone={selectedRoom.userId?.phone || selectedRoom.owner?.phone || "Hiển thị để liên hệ"}
           onClose={() => setSelectedRoom(null)}
         />
       )}

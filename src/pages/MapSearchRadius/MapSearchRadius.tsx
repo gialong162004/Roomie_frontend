@@ -66,9 +66,9 @@ function normalizeRoom(room: RoomApiItem): Room {
     price: room.price, city: room.city, district: room.district, ward: room.ward,
     address: room.address, superficies: room.superficies, images: room.images,
     coords: extractCoords(room), distance: room.distance,
-    posterId: (room as any).userId?._id ?? (room as any).userId ?? (room as any).posterId,
-    posterName: (room as any).userId?.name ?? (room as any).posterName ?? 'Chủ nhà',
-    phone: (room as any).phone ?? (room as any).userId?.phone,
+    posterId: (room as any).owner?._id ?? (room as any).userId?._id ?? (room as any).userId ?? (room as any).posterId,
+    posterName: (room as any).owner?.name ?? (room as any).userId?.name ?? (room as any).posterName ?? 'Chủ nhà',
+    phone: (room as any).owner?.phone ?? (room as any).phone ?? (room as any).userId?.phone,
   };
 }
 

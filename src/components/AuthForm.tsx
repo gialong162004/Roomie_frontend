@@ -1,28 +1,26 @@
-// src/components/AuthForm.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Input from "./ui/Input";
 import type { RegisterPayload, LoginPayload } from "../types/auth.type";
 
 /**
- * Discriminated union cho props:
- * - nếu mode === "register" -> onSubmit nhận RegisterPayload & { confirmPassword? }
- * - nếu mode === "login"    -> onSubmit nhận LoginPayload
+ * Thêm thuộc tính renderForgotPassword tùy chọn vào component
  */
 type AuthFormProps =
   | {
       mode: "register";
       onSubmit: (data: RegisterPayload & { confirmPassword?: string }) => void | Promise<void>;
+      renderForgotPassword?: () => React.ReactNode; // 👈 Nhận hàm render nút quên mật khẩu từ bên ngoài
     }
   | {
       mode: "login";
       onSubmit: (data: LoginPayload) => void | Promise<void>;
+      renderForgotPassword?: () => React.ReactNode; // 👈 Nhận hàm render nút quên mật khẩu từ bên ngoài
     };
 
 const AuthForm: React.FC<AuthFormProps> = (props) => {
   const navigate = useNavigate();
   
-  // state chung
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -35,7 +33,6 @@ const AuthForm: React.FC<AuthFormProps> = (props) => {
     e.preventDefault();
 
     if (mode === "register") {
-      // props typed as register-variant here
       if (!name || !email || !password || !confirmPassword || !phone) {
         alert("Vui lòng điền đầy đủ thông tin!");
         return;
@@ -54,10 +51,8 @@ const AuthForm: React.FC<AuthFormProps> = (props) => {
         confirmPassword,
       };
 
-      // props.onSubmit is known to accept this shape
       return props.onSubmit(payload);
     } else {
-      // mode === "login"
       if (!email || !password) {
         alert("Vui lòng nhập email và mật khẩu!");
         return;
@@ -137,7 +132,6 @@ const AuthForm: React.FC<AuthFormProps> = (props) => {
         {mode === "login" ? "Đăng nhập" : "Đăng ký"}
       </button>
 
-      {/* Nút tiếp tục với vai trò khách */}
       <button
         type="button"
         onClick={() => navigate("/")}
@@ -146,8 +140,16 @@ const AuthForm: React.FC<AuthFormProps> = (props) => {
         Tiếp tục với vai trò khách
       </button>
 
-      {/* Link điều hướng */}
-      <div className="mt-6 text-center">
+      {/* Khu vực link điều hướng phía dưới */}
+      <div className="mt-6 text-center space-y-2">
+        
+        {/* 📍 Render nút "Quên mật khẩu?" nằm TRÊN dòng chữ đăng ký */}
+        {mode === "login" && props.renderForgotPassword && (
+          <div className="mb-2">
+            {props.renderForgotPassword()}
+          </div>
+        )}
+
         {mode === "login" ? (
           <p className="text-sm text-gray-500">
             Chưa có tài khoản?{" "}

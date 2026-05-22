@@ -3,11 +3,16 @@ import { AuthAPI } from "../api/api";
 import type { LoginPayload } from "../types/auth.type";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import Toast from "../components/common/Toast"; // 👈 import Toast
+import Toast from "../components/common/Toast";
 
 export default function Login() {
   const navigate = useNavigate();
   const [toast, setToast] = useState<{ message: string; subtitle:string; type: "success" | "error" | "info" } | null>(null);
+
+  // 🔐 State quản lý Popup Quên mật khẩu
+  const [showForgotPopup, setShowForgotPopup] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
 
   const showToast = (message: string, subtitle:string, type: "success" | "error" | "info") => {
     setToast({ message, subtitle, type });
@@ -29,25 +34,101 @@ export default function Login() {
         return;
       }
 
-      // Lưu thông tin đăng nhập
       if (token) localStorage.setItem("token", token);
       if (user) localStorage.setItem("user", JSON.stringify(user));
 
-      // Thông báo thành công
       showToast("Đăng nhập thành công!", "Đang chuyển hướng đến trang chủ", "success");
-      setTimeout(() => navigate("/"), 1500); // chuyển trang sau 1.5s
+      setTimeout(() => navigate("/"), 1500); 
     } catch (err: any) {
       console.error("❌ Login failed:", err);
       const msg = err?.response?.data?.message || "Đăng nhập thất bại!";
-      showToast(msg, `${JSON.stringify(err.error)} vui lòng liên hệ ...`, "error");
+      showToast(msg, "Vui lòng kiểm tra lại thông tin tài khoản.", "error");
+    }
+  };
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      showToast("Thiếu thông tin", "Vui lòng nhập email của bạn!", "info");
+      return;
+    }
+
+    try {
+      setIsSubmittingForgot(true);
+      await AuthAPI.forgotPassword(forgotEmail);
+      
+      showToast("Đã gửi mã xác nhận!", "Vui lòng kiểm tra hộp thư email của bạn.", "success");
+      setShowForgotPopup(false);
+      setTimeout(() => {
+        navigate("/reset-password", { state: { email: forgotEmail } });
+      }, 1500);
+    } catch (err: any) {
+      console.error("❌ Forgot password failed:", err);
+      const msg = err?.response?.data?.message || "Yêu cầu thất bại, vui lòng thử lại!";
+      showToast(msg, "Không thể gửi mã xác nhận đến email này.", "error");
+    } finally {
+      setIsSubmittingForgot(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-secondary/30 via-secondary/10 to-primary/10">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-secondary/30 via-secondary/10 to-primary/10 p-4">
       <div className="w-full max-w-md">
-        <AuthForm mode="login" onSubmit={handleLogin} />
+        {/* Truyền hàm render nút quên mật khẩu vào prop của AuthForm */}
+        <AuthForm 
+          mode="login" 
+          onSubmit={handleLogin} 
+          renderForgotPassword={() => (
+            <button
+              type="button"
+              onClick={() => setShowForgotPopup(true)}
+              className="text-sm text-primary hover:underline font-semibold transition-colors focus:outline-none"
+            >
+              Quên mật khẩu?
+            </button>
+          )}
+        />
       </div>
+
+      {/* 🛠️ Giao diện Popup nhập Email */}
+      {showForgotPopup && (
+        <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl animate-fadeIn">
+            <h3 className="text-lg font-semibold text-gray-800 mb-1">Quên mật khẩu</h3>
+            <p className="text-xs text-gray-500 mb-4">Nhập email của bạn để nhận mã xác thực thiết lập lại mật khẩu.</p>
+            
+            <form onSubmit={handleForgotPasswordSubmit} className="flex flex-col gap-4">
+              <input
+                type="email"
+                placeholder="example@gmail.com"
+                required
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                className="w-full text-sm p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
+              />
+              <div className="flex justify-end gap-2 text-sm font-medium">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPopup(false);
+                    setForgotEmail("");
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingForgot}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {isSubmittingForgot ? "Đang gửi..." : "Gửi mã"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Hiển thị toast */}
       {toast && (

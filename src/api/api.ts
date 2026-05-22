@@ -167,10 +167,16 @@ const chatBot = (message: string) => {
   return axios.post("/api/chatbot", { message });
 }
 const reportPost = (postId: string, reason: string) => {
-  return axios.post(`/api/posts/report`, { postId, reason });
+  return axios.post("/api/reports", { postId, reason });
+}
+const forgotPassword = (email: string) => {
+  return axios.post("/api/auth/forgot-password", { email });
+}
+const resetPassword = (email: string, code: string, newPassword: string) => {
+  return axios.post("/api/auth/reset-password", { email, code, newPassword });
 }
 
-export const AuthAPI = { register, verifyRegister, login, getProfile };
+export const AuthAPI = { register, verifyRegister, login, getProfile, forgotPassword, resetPassword };
 export const PostAPI = { getPostDetail, getPost, createPost, getCategory, getMyPost, deletePost, updatePost, getUserPost, getFavoritePosts, 
   addFavoritePost, removeFavoritePost, searchPosts, getNearbyPosts, editAvailable, getNewPosts, reportPost };
 export const UserAPI = { getProfile, updateProfile, updateAvatar, getPublicProfile };

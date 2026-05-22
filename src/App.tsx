@@ -10,6 +10,7 @@ import IntroPage from "./pages/Intro";
 import PricingPage from "./pages/PricingPage";
 import MapSearchRadius from "./pages/MapSearchRadius/MapSearchRadius";
 import SearchPage from "./pages/Home";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
       <Route path="login" element={<Login />} />
       <Route path="register" element={<Register />} />
       <Route path="verify-otp" element={<VerifyOTP />} />
+      <Route path="reset-password" element={<ResetPassword />} />
     </Routes>
   );
 }
