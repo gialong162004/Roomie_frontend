@@ -181,27 +181,35 @@ export default function MapSearchRadius() {
     const ra = radiusActiveRef.current;
     const rkm = radiusKmRef.current;
 
+    let centerForDist: Coords | null = null;
+
     if (ra && rc) {
       filtered = all.filter(r => {
         const c = cm[r._id];
         if (!c) return false;
         return haversineKm(rc, c) <= rkm;
       });
+      centerForDist = rc;
     } else {
       filtered = all.filter(r => {
         const c = cm[r._id];
         if (!c) return false;
         return bounds.contains([c.lng, c.lat]);
       });
+      centerForDist = null; // Do not constantly re-sort by map center to prevent list jumping
     }
 
-    const center = rc && ra ? rc : { lat: map.getCenter().lat, lng: map.getCenter().lng };
     const distObj: Record<string, number> = {};
-    filtered.forEach(r => {
-      const c = cm[r._id];
-      if (c) distObj[r._id] = haversineKm(center, c);
-    });
-    filtered = [...filtered].sort((a, b) => (distObj[a._id] ?? 999) - (distObj[b._id] ?? 999));
+    if (centerForDist) {
+      filtered.forEach(r => {
+        const c = cm[r._id];
+        if (c) distObj[r._id] = haversineKm(centerForDist!, c);
+      });
+      filtered = [...filtered].sort((a, b) => (distObj[a._id] ?? 999) - (distObj[b._id] ?? 999));
+    } else {
+      // Maintain consistent order when panning to prevent list flickering
+      filtered = [...filtered].sort((a, b) => a._id.localeCompare(b._id));
+    }
 
     setVisibleRooms(filtered);
     setDistMap(distObj);
@@ -599,12 +607,29 @@ export default function MapSearchRadius() {
     updateVisibleRooms();
   };
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const hd = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', hd);
+    return () => window.removeEventListener('resize', hd);
+  }, []);
+
   return (
     <>
-      <div style={{ display: 'flex', height: '100vh', fontFamily: "'Circular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column-reverse' : 'row', height: '100dvh', paddingBottom: isMobile ? '85px' : 0, boxSizing: 'border-box', fontFamily: "'Circular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", overflow: 'hidden' }}>
 
         {/* ── LEFT: Room list ─────────────────────────────────────────────── */}
-        <div style={{ width: 460, minWidth: 360, display: 'flex', flexDirection: 'column', background: '#fff', borderRight: '1px solid #ebebeb', zIndex: 2, overflow: 'hidden' }}>
+        <div style={{ 
+          width: isMobile ? '100%' : 460, 
+          minWidth: isMobile ? '100%' : 360, 
+          height: isMobile ? '45dvh' : '100%',
+          display: 'flex', flexDirection: 'column', 
+          background: '#fff', 
+          borderRight: isMobile ? 'none' : '1px solid #ebebeb', 
+          borderTop: isMobile ? '1px solid #ebebeb' : 'none', 
+          zIndex: 2, overflow: 'hidden',
+          flexShrink: 0
+        }}>
           {/* Search bar */}
           <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #ebebeb', background: '#fff' }}>
             <div style={{ position: 'relative' }}>
@@ -706,9 +731,21 @@ export default function MapSearchRadius() {
           </div>
 
           {/* Room list */}
-          <div ref={listRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 16px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', alignContent: 'start' }}>
+          <div ref={listRef} style={{ 
+            flex: 1, 
+            overflowY: isMobile ? 'hidden' : 'auto', 
+            overflowX: isMobile ? 'auto' : 'hidden', 
+            padding: '12px 16px 16px', 
+            display: isMobile ? 'flex' : 'grid', 
+            gridTemplateColumns: isMobile ? undefined : 'repeat(2, 1fr)', 
+            gap: '16px', 
+            alignContent: 'start',
+            scrollSnapType: isMobile ? 'x mandatory' : 'none',
+            scrollbarWidth: 'none',
+          }}>
+            <style>{`div::-webkit-scrollbar { display: none; }`}</style>
             {visibleRooms.length === 0 && !loading ? (
-              <div style={{ textAlign: 'center', padding: '48px 24px', color: '#717171', gridColumn: '1 / -1' }}>
+              <div style={{ textAlign: 'center', padding: '48px 24px', color: '#717171', gridColumn: '1 / -1', width: '100%' }}>
                 Không tìm thấy phòng trong khu vực này.
               </div>
             ) : (
@@ -719,8 +756,13 @@ export default function MapSearchRadius() {
                   onClick={() => setActiveId(room._id)}
                   style={{
                     cursor: 'pointer',
-                    outline: activeId === room._id ? '2px solid #222' : 'none',
-                    borderRadius: 12, transition: 'outline 0.1s'
+                    outline: activeId === room._id ? '2px solid #222' : 'transparent',
+                    outlineOffset: '2px', // Make outline look better
+                    borderRadius: 16, transition: 'outline 0.1s',
+                    flexShrink: 0,
+                    width: isMobile ? '200px' : 'auto',
+                    scrollSnapAlign: isMobile ? 'start' : 'none',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center'
                   }}
                 >
                   <RoomCardHome
@@ -740,7 +782,7 @@ export default function MapSearchRadius() {
         </div>
 
         {/* ── RIGHT: Map Pane ─────────────────────────────────────────────── */}
-        <div style={{ flex: 1, position: 'relative', height: '100%' }}>
+        <div style={{ flex: 1, position: 'relative', height: isMobile ? '55dvh' : '100%', minHeight: 0 }}>
           <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
         </div>
       </div>

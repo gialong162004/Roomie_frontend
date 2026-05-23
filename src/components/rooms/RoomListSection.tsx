@@ -46,8 +46,6 @@ const getRoomAddress = (room: Room): string => {
   return `${room.district}, ${room.city}`;
 };
 
-const CARD_WIDTH = 228; // minWidth + gap
-
 const RoomListSection: React.FC<RoomListSectionProps> = ({
   title,
   subtitle,
@@ -67,30 +65,45 @@ const RoomListSection: React.FC<RoomListSectionProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isMobile, setIsMobile] = useState(true);
 
   const updateArrows = () => {
     const el = scrollRef.current;
     if (!el) return;
     setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
   };
 
   useEffect(() => {
-    updateArrows();
+    // Kiểm tra môi trường màn hình để phân tách Mobile / PC chuẩn xác
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      updateArrows();
+    };
+
+    handleResize();
     const el = scrollRef.current;
     if (!el) return;
+    
     el.addEventListener("scroll", updateArrows, { passive: true });
-    window.addEventListener("resize", updateArrows);
+    window.addEventListener("resize", handleResize);
     return () => {
       el.removeEventListener("scroll", updateArrows);
-      window.removeEventListener("resize", updateArrows);
+      window.removeEventListener("resize", handleResize);
     };
   }, [displayedRooms]);
 
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;
     if (!el) return;
-    const amount = CARD_WIDTH * 3;
+
+    const firstItem = el.querySelector("div") as HTMLElement;
+    if (!firstItem) return;
+
+    const cardWidth = firstItem.getBoundingClientRect().width;
+    const computedGap = parseFloat(window.getComputedStyle(el).gap) || (isMobile ? 10 : 16);
+    const amount = cardWidth + computedGap;
+
     el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
   };
 
@@ -105,25 +118,15 @@ const RoomListSection: React.FC<RoomListSectionProps> = ({
       onClick={() => scroll(dir)}
       disabled={disabled}
       aria-label={dir === "left" ? "Cuộn trái" : "Cuộn phải"}
+      className={`hidden md:flex absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full border-2 items-center justify-center transition-all duration-200 ${
+        dir === "left" ? "-left-5" : "-right-5"
+      }`}
       style={{
-        position: "absolute",
-        top: "50%",
-        transform: "translateY(-50%)",
-        [dir === "left" ? "left" : "right"]: "-20px",
-        zIndex: 10,
-        width: "40px",
-        height: "40px",
-        borderRadius: "50%",
         border: `2px solid ${disabled ? "#E2E8F0" : accentColor}`,
         background: disabled ? "#F8FAFC" : "#FFFFFF",
         color: disabled ? "#CBD5E1" : accentColor,
         cursor: disabled ? "default" : "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxShadow: disabled ? "none" : "0 2px 8px rgba(0,0,0,0.12)",
-        transition: "all 0.2s",
-        flexShrink: 0,
+        boxShadow: disabled ? "none" : "0 4px 12px rgba(0,0,0,0.1)",
       }}
       onMouseEnter={(e) => {
         if (!disabled) {
@@ -151,47 +154,27 @@ const RoomListSection: React.FC<RoomListSectionProps> = ({
   );
 
   return (
-    <section style={{ padding: "80px 40px", backgroundColor }}>
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-            marginBottom: "30px",
-          }}
-        >
+    <section className="py-8 px-4 md:py-16 md:px-10" style={{ backgroundColor }}>
+      <div className="max-w-[1200px] mx-auto">
+        
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 md:mb-8">
           <div>
-            <h2
-              style={{
-                fontSize: "2rem",
-                fontWeight: "bold",
-                color: "#334155",
-                marginBottom: subtitle ? "8px" : 0,
-              }}
-            >
+            <h2 className={`font-bold text-[#334155] tracking-tight text-xl md:text-3xl ${subtitle ? "mb-1.5" : "mb-0"}`}>
               {title}
             </h2>
             {subtitle && (
-              <p style={{ fontSize: "1rem", color: "#64748B", margin: 0 }}>
+              <p className="text-sm md:text-base text-[#64748B] m-0">
                 {subtitle}
               </p>
             )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
             {badge && rooms.length > 0 && (
               <span
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: "12px",
-                  fontWeight: 700,
-                  fontSize: "0.9rem",
-                  background: "#FBBF24",
-                  color: "#78350F",
-                  ...badgeStyle,
-                }}
+                className="px-3 py-1.5 rounded-xl font-bold text-xs md:text-sm bg-[#FBBF24] text-[#78350F]"
+                style={badgeStyle}
               >
                 {badge}
               </span>
@@ -199,16 +182,10 @@ const RoomListSection: React.FC<RoomListSectionProps> = ({
             {onViewAll && rooms.length > 0 && (
               <button
                 onClick={onViewAll}
+                className="px-4 py-2 border-2 rounded-full bg-transparent font-semibold text-xs md:text-sm transition-all duration-200 cursor-pointer"
                 style={{
-                  padding: "8px 20px",
-                  border: `2px solid ${accentColor}`,
-                  borderRadius: "20px",
-                  background: "transparent",
+                  borderColor: accentColor,
                   color: accentColor,
-                  fontWeight: 600,
-                  fontSize: "0.9rem",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = accentColor;
@@ -225,68 +202,49 @@ const RoomListSection: React.FC<RoomListSectionProps> = ({
           </div>
         </div>
 
-        {/* Content */}
+        {/* Content Slider */}
         {loading ? (
-          <div style={{ textAlign: "center", padding: "48px", color: "#94A3B8" }}>
+          <div className="text-center py-12 text-[#94A3B8]">
             <div
+              className="inline-block w-9 h-9 border-3 rounded-full animate-spin mb-3"
               style={{
-                display: "inline-block",
-                width: "36px",
-                height: "36px",
-                border: `3px solid #E2E8F0`,
-                borderTop: `3px solid ${accentColor}`,
-                borderRadius: "50%",
-                animation: "spin 0.8s linear infinite",
-                marginBottom: "12px",
+                borderStyle: "solid",
+                borderColor: "#E2E8F0",
+                borderTopColor: accentColor,
               }}
             />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            <p style={{ margin: 0 }}>Đang tải...</p>
+            <p className="m-0 text-sm">Đang tải...</p>
           </div>
         ) : displayedRooms.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "48px 20px",
-              color: "#94A3B8",
-              background: "#F8FAFC",
-              borderRadius: "12px",
-              border: "2px dashed #E2E8F0",
-            }}
-          >
-            <p style={{ fontSize: "1.1rem", margin: 0 }}>{emptyText}</p>
+          <div className="text-center py-12 px-5 text-[#94A3B8] bg-[#F8FAFC] rounded-2xl border-2 border-dashed border-[#E2E8F0]">
+            <p className="text-sm md:text-base m-0">{emptyText}</p>
           </div>
         ) : (
-          <div style={{ position: "relative" }}>
+          <div className="relative w-full">
             {/* Left Arrow */}
             <ArrowButton dir="left" disabled={!canScrollLeft} />
 
-            {/* Scrollable Row */}
+            {/* Scrollable Container */}
             <div
               ref={scrollRef}
+              // Sử dụng gap nhỏ (gap-3) trên Mobile để các card đứng sát nhau gọn gàng
+              className="flex flex-row overflow-x-auto gap-3 md:gap-4 scrollbar-none pb-2 px-1 py-1"
               style={{
-                display: "flex",
-                flexDirection: "row",
-                gap: "18px",
-                overflowX: "auto",
                 scrollSnapType: "x mandatory",
-                scrollbarWidth: "none",
                 msOverflowStyle: "none",
-                padding: "4px 28px 8px",
+                scrollbarWidth: "none",
               }}
             >
-              <style>{`
-                div::-webkit-scrollbar { display: none; }
-              `}</style>
+              <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+              
               {displayedRooms.map((room) => (
                 <div
                   key={room._id}
                   onClick={() => onViewRoom(room._id)}
+                  className="cursor-pointer shrink-0 scroll-snap-align-start"
+                  // 👇 SỬA ĐỔI QUAN TRỌNG: Khớp kích thước với max-w-[200px] của RoomCardHome
                   style={{
-                    cursor: "pointer",
-                    flexShrink: 0,
-                    width: "210px",
-                    scrollSnapAlign: "start",
+                    width: isMobile ? "200px" : "calc(20% - 12.8px)"
                   }}
                 >
                   <RoomCardHome

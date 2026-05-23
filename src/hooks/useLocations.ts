@@ -24,6 +24,25 @@ const provinceConfig: Record<
     aliases: string[];
   }
 > = {
+  // Thêm cấu hình cho Hà Nội ở đây
+  'Thành phố Hà Nội': {
+    displayName: 'Hà Nội',
+    aliases: [
+      'Thành phố Hà Nội',
+      'Ha Noi',
+      'HN',
+      'Thủ đô Hà Nội',
+    ],
+  },
+  'Thành phố Hồ Chí Minh': {
+    displayName: 'Hồ Chí Minh',
+    aliases: [
+      'Thành phố Hồ Chí Minh',
+      'Ho Chi Minh',
+      'HCM',
+    ],
+  },
+
   'Bình Dương': {
     displayName: 'Thành phố Hồ Chí Minh',
     aliases: [

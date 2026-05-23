@@ -35,7 +35,8 @@ interface RoomDetailType {
   images: string[];
   category?: { id?: string; name?: string };
   updatedAt: string;
-  owner?: { _id: string; name: string; phone?: string }; userId?: { _id: string; name: string; phone?: string };
+  owner?: { _id: string; name: string; phone?: string }; 
+  userId?: { _id: string; name: string; phone?: string };
   superficies?: number;
 }
 
@@ -63,14 +64,9 @@ const HomeNew: React.FC = () => {
   const navigate = useNavigate();
 
   const allRooms: Room[] = Object.values(roomsByCategory).flat();
-
   const featuredRooms: Room[] = recommendedRooms;
+  const forYouRooms: Room[] = [...allRooms].filter((r) => r.city === selectedCity).slice(0, 8);
 
-  const forYouRooms: Room[] = [...allRooms]
-    .filter((r) => r.city === selectedCity)
-    .slice(0, 8);
-
-  // --- Helpers ---
   const extractRoomsFromResponse = (response: any): Room[] => {
     if (Array.isArray(response?.content)) return response.content;
     if (Array.isArray(response?.data?.content)) return response.data.content;
@@ -88,14 +84,12 @@ const HomeNew: React.FC = () => {
       grouped[categoryId].push(room);
     });
 
-    const vipRooms = rooms
-      .filter(
-        (room) =>
-          (room as any)?.isVip ||
-          (room as any)?.priority === "VIP" ||
-          (room as any)?.priority === 1
-      )
-      .slice(0, 8);
+    const vipRooms = rooms.filter(
+      (room) =>
+        (room as any)?.isVip ||
+        (room as any)?.priority === "VIP" ||
+        (room as any)?.priority === 1
+    ).slice(0, 8);
 
     const topRooms = [...rooms]
       .sort((a, b) => Number(b.price || 0) - Number(a.price || 0))
@@ -111,7 +105,6 @@ const HomeNew: React.FC = () => {
     const params = new URLSearchParams();
     if (searchKeyword.trim()) params.append('keyword', searchKeyword.trim());
     if (selectedCity) params.append('city', selectedCity);
-    
     navigate(`/search?${params.toString()}`);
   };
 
@@ -121,11 +114,7 @@ const HomeNew: React.FC = () => {
     (async () => {
       try {
         const response = (await PostAPI.getCategory()) as any;
-        const categoryData = Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response)
-          ? response
-          : [];
+        const categoryData = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
         setData({ categories: categoryData });
       } catch {
         showToast("Lỗi khi tải danh mục", { type: "error" });
@@ -166,7 +155,7 @@ const HomeNew: React.FC = () => {
     })();
   }, []);
 
-  // Fetch room detail when selected
+  // Fetch room detail
   useEffect(() => {
     if (!selectedPostId) return;
     (async () => {
@@ -192,63 +181,47 @@ const HomeNew: React.FC = () => {
   };
 
   return (
-    <>
+    <div className="w-full min-h-screen bg-white overflow-x-hidden">
       <Navbar />
 
       {/* Hero Section */}
-      <div
-        style={{
-          width: "100%",
-          background: "#f5f5f5", 
-          position: "relative",
-          overflow: "hidden",
-          padding: "40px 20px 50px",
-          textAlign: "center",
-        }}
-      >
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", color: "#334155", marginBottom: "1.5rem" }}> {/* Chuyển sang màu textDark #334155 từ config của bạn */}
+      <div className="w-full bg-[#f5f5f5] relative overflow-hidden px-4 py-10 md:py-16 text-center">
+        <div className="relative z-10 max-w-4xl mx-auto">
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-[#334155] mb-6 tracking-tight px-2">
             Roomie – Chạm là thấy phòng.
           </h1>
 
-          {/* Search bar */}
+          {/* Optimized Search Bar */}
           <form
-            style={{
-              display: "flex",
-              alignItems: "center",
-              background: "white",
-              borderRadius: "12px",
-              padding: "8px 8px 8px 16px",
-              maxWidth: "860px",
-              margin: "0 auto",
-              gap: "8px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-            }}
+            className="flex flex-col md:flex-row items-stretch md:items-center bg-white rounded-2xl md:rounded-xl p-3 md:p-2 max-w-3xl mx-auto gap-3 shadow-lg border border-gray-100"
             onSubmit={(e) => { e.preventDefault(); runSearch(); }}
           >
-            <div style={{ display: "flex", alignItems: "center", flex: 1, gap: "8px" }}>
-              <svg width="20" height="20" fill="none" stroke="#64748B" strokeWidth="2" viewBox="0 0 24 24"> {/* Chuyển stroke sang màu textGray #64748B */}
+            {/* Keyword Input Group */}
+            <div className="flex items-center flex-1 gap-3 px-3 py-2 md:py-0 border-b md:border-b-0 border-gray-100">
+              <svg width="20" height="20" fill="none" stroke="#64748B" strokeWidth="2" viewBox="0 0 24 24" className="shrink-0">
                 <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
               </svg>
               <input
                 type="text"
-                placeholder="Tìm phòng..."
+                placeholder="Tìm tên phòng, khu vực..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                style={{ border: "none", outline: "none", fontSize: "0.95rem", color: "#334155", width: "100%", background: "transparent" }}
+                className="border-none outline-none text-[15px] text-[#334155] w-full bg-transparent placeholder-gray-400"
               />
             </div>
 
-            <div style={{ width: "1px", height: "28px", background: "#E2E8F0" }} /> {/* Đổi màu gạch dọc sang borderLight #E2E8F0 */}
+            {/* Desktop Separator */}
+            <div className="hidden md:block w-[1px] height-[28px] bg-[#E2E8F0] self-stretch my-2" />
 
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 12px", whiteSpace: "nowrap" }}>
-              <svg width="16" height="16" fill="#14B8A6" viewBox="0 0 24 24"> {/* Đổi màu icon định vị sang primaryLight #14B8A6 */}
+            {/* Location Dropdown Group */}
+            <div className="flex items-center gap-2 px-3 py-2 md:py-0 border-b md:border-b-0 border-gray-100">
+              <svg width="18" height="18" fill="#14B8A6" viewBox="0 0 24 24" className="shrink-0">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               </svg>
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
-                style={{ border: "none", outline: "none", fontSize: "0.9rem", color: "#334155", background: "transparent", cursor: "pointer", maxWidth: "180px" }}
+                className="border-none outline-none text-[14px] font-medium text-[#334155] bg-transparent cursor-pointer w-full md:max-w-[160px] py-1"
               >
                 <option value="">Toàn quốc</option>
                 {provinces.map((p) => (
@@ -257,25 +230,10 @@ const HomeNew: React.FC = () => {
               </select>
             </div>
 
-            <div style={{ width: "1px", height: "28px", background: "#E2E8F0" }} />
-
+            {/* Submit Button */}
             <button
               type="submit"
-              style={{
-                background: "#0D9488", // Đổi nút bấm sang màu xanh ngọc primary (#0D9488)
-                color: "white", 
-                border: "none", 
-                borderRadius: "8px",
-                padding: "12px 28px", 
-                fontWeight: "700", 
-                fontSize: "1rem", 
-                cursor: "pointer", 
-                whiteSpace: "nowrap",
-                transition: "background 0.2s", // Thêm hiệu ứng mượt khi hover
-              }}
-              // Thêm hiệu ứng đổi màu đậm hơn khi người dùng rê chuột vào nút
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#0F766E")} // primaryDark (#0F766E)
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#0D9488")} // Trở lại primary
+              className="bg-[#0D9488] hover:bg-[#0F766E] text-white font-bold text-[15px] py-3 md:py-2.5 px-6 rounded-xl md:rounded-lg transition-colors duration-200 shrink-0 shadow-md shadow-teal-600/10"
             >
               Tìm phòng
             </button>
@@ -283,98 +241,93 @@ const HomeNew: React.FC = () => {
         </div>
       </div>
 
-      {/* ── 3 Room Lists using shared RoomListSection component ── */}
+      {/* ── Room List Sections ── */}
+      <div className="space-y-2">
+        <RoomListSection
+          title="Bài đăng nổi bật"
+          subtitle="Những bài đăng được đề xuất của các đối tác"
+          rooms={featuredRooms}
+          loading={loadingRooms}
+          badge={`TOP ${featuredRooms.length}`}
+          badgeStyle={{ background: "#FBBF24", color: "#78350F" }}
+          emptyText="Chưa có bài nổi bật. Hãy nâng cấp VIP để đẩy top."
+          onViewRoom={handleViewRoom}
+          backgroundColor="#FFFFFF"
+          accentColor="#FF6B00"
+        />
 
-      {/* 1. Bài đăng nổi bật (VIP / top price) */}
-      <RoomListSection
-        title="Bài đăng nổi bật"
-        subtitle="Những bài đăng được đề xuất và ưu tiên hiển thị"
-        rooms={featuredRooms}
-        loading={loadingRooms}
-        badge={`TOP ${featuredRooms.length}`}
-        badgeStyle={{ background: "#FBBF24", color: "#78350F" }}
-        emptyText="Chưa có bài nổi bật. Hãy nâng cấp VIP để đẩy top."
-        onViewRoom={handleViewRoom}
-        backgroundColor="#FFFFFF"
-        accentColor="#FF6B00"
-      />
+        <RoomListSection
+          title="Bài đăng mới nhất"
+          subtitle="Cập nhật liên tục những tin đăng mới nhất"
+          rooms={newPosts}
+          loading={loadingNewPosts}
+          emptyText="Chưa có bài đăng nào."
+          maxItems={8}
+          onViewRoom={handleViewRoom}
+          onViewAll={() => navigate("/search")}
+          viewAllLabel="Xem tất cả"
+          backgroundColor="#F8FAFC"
+          accentColor="#0D9488"
+        />
 
-      {/* 2. Bài đăng mới nhất */}
-      <RoomListSection
-        title="Bài đăng mới nhất"
-        subtitle="Cập nhật liên tục những tin đăng mới nhất"
-        rooms={newPosts}
-        loading={loadingNewPosts}
-        emptyText="Chưa có bài đăng nào."
-        maxItems={8}
-        onViewRoom={handleViewRoom}
-        onViewAll={() => navigate("/search")}
-        viewAllLabel="Xem tất cả"
-        backgroundColor="#F8FAFC"
-        accentColor="#0D9488"
-      />
-
-      {/* 3. Bài đăng dành cho bạn (lọc theo thành phố đang chọn) */}
-      <RoomListSection
-        title="Dành cho bạn"
-        subtitle={`Phòng gần bạn tại ${selectedCity || "khắp nơi"}`}
-        rooms={forYouRooms}
-        loading={loadingRooms}
-        emptyText={`Không tìm thấy phòng tại ${selectedCity || "khu vực này"}.`}
-        maxItems={8}
-        onViewRoom={handleViewRoom}
-        onViewAll={() => navigate("/search")}
-        viewAllLabel="Khám phá thêm"
-        backgroundColor="#FFFFFF"
-        accentColor="#6366F1"
-      />
+        <RoomListSection
+          title="Dành cho bạn"
+          subtitle={`Phòng gần bạn tại ${selectedCity || "khắp nơi"}`}
+          rooms={forYouRooms}
+          loading={loadingRooms}
+          emptyText={`Không tìm thấy phòng tại ${selectedCity || "khu vực này"}.`}
+          maxItems={8}
+          onViewRoom={handleViewRoom}
+          onViewAll={() => navigate("/search")}
+          viewAllLabel="Khám phá thêm"
+          backgroundColor="#FFFFFF"
+          accentColor="#6366F1"
+        />
+      </div>
 
       {/* Features Section */}
-      <section style={{ padding: "80px 40px", backgroundColor: "#F8FAFC" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: "60px" }}>
-            <h2 style={{ fontSize: "2.5rem", fontWeight: "bold", color: "#334155", marginBottom: "1rem" }}>
-              Tại sao chọn chúng tôi?
-            </h2>
-            <p style={{ fontSize: "1.1rem", color: "#64748B" }}>
-              Nền tảng cho thuê phòng uy tín và hiệu quả
-            </p>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "30px" }}>
-            {[
-              { icon: "🏠", title: "Phòng đa dạng", desc: "Hàng trăm phòng cho thuê với mọi loại và giá cả phù hợp" },
-              { icon: "💰", title: "Giá cạnh tranh", desc: "Giá hợp lý, không phí ẩn, minh bạch hoàn toàn" },
-              { icon: "🔒", title: "Tin cậy", desc: "Được xác minh đầy đủ, bảo vệ quyền người dùng" },
-              { icon: "⚡", title: "Nhanh chóng", desc: "Tìm kiếm và đặt lịch xem phòng chỉ trong vài phút" },
-            ].map((feature, idx) => (
-              <div
-                key={idx}
-                style={{ padding: "30px", backgroundColor: "#FFFFFF", borderRadius: "12px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", transition: "transform 0.3s, box-shadow 0.3s" }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-5px)"; e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.15)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)"; }}
-              >
-                <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>{feature.icon}</div>
-                <h3 style={{ fontSize: "1.3rem", fontWeight: "600", marginBottom: "0.5rem", color: "#334155" }}>{feature.title}</h3>
-                <p style={{ color: "#64748B" }}>{feature.desc}</p>
-              </div>
-            ))}
-          </div>
+      <section className="py-12 md:py-20 px-4 max-w-7xl mx-auto">
+        <div className="text-center mb-10 md:mb-16">
+          <h2 className="text-2xl md:text-4xl font-bold text-[#334155] mb-3">
+            Tại sao chọn chúng tôi?
+          </h2>
+          <p className="text-sm md:text-base text-[#64748B]">
+            Nền tảng cho thuê phòng uy tín và hiệu quả
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { icon: "🏠", title: "Phòng đa dạng", desc: "Hàng trăm phòng cho thuê với mọi loại và giá cả phù hợp" },
+            { icon: "💰", title: "Giá cạnh tranh", desc: "Giá hợp lý, không phí ẩn, minh bạch hoàn toàn" },
+            { icon: "🔒", title: "Tin cậy", desc: "Được xác minh đầy đủ, bảo vệ quyền người dùng" },
+            { icon: "⚡", title: "Nhanh chóng", desc: "Tìm kiếm và đặt lịch xem phòng chỉ trong vài phút" },
+          ].map((feature, idx) => (
+            <div
+              key={idx}
+              className="p-6 bg-white border border-gray-50 rounded-2xl text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
+            >
+              <div className="text-4xl mb-4">{feature.icon}</div>
+              <h3 className="text-base md:text-lg font-semibold mb-2 text-[#334155]">{feature.title}</h3>
+              <p className="text-sm text-[#64748B] leading-relaxed">{feature.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* Statistics Section */}
-      <section style={{ padding: "80px 40px", background: "linear-gradient(135deg, #14B8A6 0%, #0F766E 100%)", marginTop: "24px" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "40px", textAlign: "center", color: "white" }}>
+      <section className="py-12 bg-gradient-to-br from-[#14B8A6] to-[#0F766E] px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
             {[
               { number: "10K+", label: "Người dùng" },
               { number: "5K+", label: "Phòng cho thuê" },
               { number: "100+", label: "Thành phố" },
               { number: "98%", label: "Hài lòng" },
             ].map((stat, idx) => (
-              <div key={idx}>
-                <div style={{ fontSize: "3rem", fontWeight: "bold", marginBottom: "0.5rem" }}>{stat.number}</div>
-                <div style={{ fontSize: "1.1rem", opacity: 0.9 }}>{stat.label}</div>
+              <div key={idx} className="space-y-1">
+                <div className="text-3xl md:text-4xl font-bold">{stat.number}</div>
+                <div className="text-xs md:text-sm opacity-90">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -382,21 +335,19 @@ const HomeNew: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section style={{ padding: "80px 40px", background: "linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)", color: "white", textAlign: "center" }}>
-        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-          <h2 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "1.5rem" }}>Sẵn sàng tìm phòng của bạn?</h2>
-          <p style={{ fontSize: "1.2rem", marginBottom: "2rem", opacity: 0.9 }}>
+      <section className="py-16 md:py-20 bg-gradient-to-br from-[#0D9488] to-[#14B8A6] text-white text-center px-4">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <h2 className="text-2xl md:text-4xl font-bold">Sẵn sàng tìm phòng của bạn?</h2>
+          <p className="text-sm md:text-base opacity-90 leading-relaxed">
             Tham gia cùng hàng ngàn người dùng đang tìm kiếm phòng cho thuê trên nền tảng của chúng tôi
           </p>
-          <a href="/#categories-section">
-            <button
-              style={{ backgroundColor: "white", color: "#0F766E", padding: "15px 40px", fontSize: "1.1rem", fontWeight: "600", border: "none", borderRadius: "50px", cursor: "pointer", boxShadow: "0 4px 15px rgba(0,0,0,0.2)", transition: "transform 0.3s, box-shadow 0.3s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.3)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(0,0,0,0.2)"; }}
-            >
-              Khám phá ngay
-            </button>
-          </a>
+          <div className="pt-2">
+            <a href="/#categories-section">
+              <button className="bg-white text-[#0F766E] hover:scale-105 active:scale-95 px-8 py-3.5 text-[15px] font-semibold rounded-full shadow-lg transition-transform duration-200">
+                Khám phá ngay
+              </button>
+            </a>
+          </div>
         </div>
       </section>
 
@@ -417,7 +368,7 @@ const HomeNew: React.FC = () => {
           onClose={() => { setSelectedRoom(null); setSelectedPostId(null); }}
         />
       )}
-    </>
+    </div>
   );
 };
 

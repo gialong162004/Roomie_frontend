@@ -701,9 +701,10 @@ const ChatWidget: React.FC = () => {
   const totalUnreadCount = contacts.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed sm:bottom-6 sm:right-6 bottom-4 right-4 z-[9999] flex flex-col items-end">
       {isOpen && (
-        <div className="mb-4 w-[380px] bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
+        // Mobile: full width (-2rem space), height responsive, PC: width 380px fixed
+        <div className="mb-4 w-[calc(100vw-32px)] sm:w-[380px] h-[calc(100vh-140px)] sm:h-auto max-h-[600px] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
           <ChatHeader
             showContactList={showContactList}
             selectedContact={selectedContact}

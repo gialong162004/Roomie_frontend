@@ -39,14 +39,14 @@ export const MessageList: React.FC<MessageListProps> = ({
 
   if (messages.length === 0) {
     return (
-      <div className="h-[340px] flex items-center justify-center bg-gray-50 text-gray-500">
+      <div className="flex-1 h-full sm:h-[340px] min-h-[300px] flex items-center justify-center bg-gray-50 text-gray-500">
         <p className="text-sm">Bắt đầu cuộc trò chuyện</p>
       </div>
     );
   }
 
   return (
-    <div className="h-[340px] overflow-y-auto p-4 bg-gray-50 space-y-3">
+    <div className="flex-1 h-full sm:h-[340px] min-h-[300px] overflow-y-auto p-4 bg-gray-50 space-y-3">
       {messages.map((message) => (
         <MessageBubble 
           key={message.id} 

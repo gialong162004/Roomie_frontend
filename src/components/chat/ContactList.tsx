@@ -26,7 +26,7 @@ export const ContactList: React.FC<ContactListProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className="h-[400px] flex items-center justify-center bg-gray-50">
+      <div className="flex-1 h-full sm:h-[400px] flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
       </div>
     );
@@ -34,7 +34,7 @@ export const ContactList: React.FC<ContactListProps> = ({
 
   if (contacts.length === 0) {
     return (
-      <div className="h-[400px] flex flex-col items-center justify-center bg-gray-50 text-gray-500">
+      <div className="flex-1 h-full sm:h-[400px] flex flex-col items-center justify-center bg-gray-50 text-gray-500">
         <svg className="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
@@ -44,7 +44,7 @@ export const ContactList: React.FC<ContactListProps> = ({
   }
 
   return (
-    <div className="h-[400px] overflow-y-auto bg-gray-50">
+    <div className="flex-1 h-full sm:h-[400px] overflow-y-auto bg-gray-50">
       {contacts.map((contact) => (
         <ContactItem
           key={contact.id}
