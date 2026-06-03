@@ -243,7 +243,7 @@ export default function Home() {
                     key={room._id}
                     _id={room._id}
                     type={room.title}
-                    price={room.price}
+                    price={formatPrice(room.price)}
                     address={`${room.district}, ${room.city}`}
                     image={room.images?.[0] || 'https://via.placeholder.com/300x200'}
                     area={room.superficies ? `${room.superficies} m²` : undefined}

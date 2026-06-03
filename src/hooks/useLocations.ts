@@ -65,25 +65,16 @@ const provinceConfig: Record<
   },
 };
 
-/**
- * Normalize province
- */
 const normalizeProvince = (province: Province): Province => {
-  const config = provinceConfig[province.name];
+  let cleanedName = province.name.replace(/^(Tỉnh|Thành phố)\s+/i, "");
 
-  if (!config) {
-    return {
-      ...province,
-      originalName: province.name,
-      aliases: [province.name],
-    };
-  }
+  const config = provinceConfig[province.name];
 
   return {
     ...province,
     originalName: province.name,
-    name: config.displayName,
-    aliases: config.aliases,
+    name: config ? config.displayName : cleanedName,
+    aliases: config ? config.aliases : [cleanedName],
   };
 };
 
@@ -107,10 +98,6 @@ export function useLocations(provinceName?: string) {
       });
   }, []);
 
-  /**
-   * Remove duplicate display names
-   * Vì Bình Dương + BRVT đều thành TP.HCM
-   */
   const provinces = useMemo(() => {
     const map = new Map<string, Province>();
 

@@ -593,6 +593,7 @@ export default function MapSearchRadius() {
     try {
       const coords = await getBrowserLocation();
       mapRef.current?.flyTo({ center: [coords.lng, coords.lat], zoom: 14, duration: 700 });
+      placeCenterMarker(coords);
       setTimeout(updateVisibleRooms, 800);
     } catch { alert('Không lấy được vị trí. Hãy cho phép truy cập vị trí.'); }
   };

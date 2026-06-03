@@ -56,7 +56,7 @@ const HomeNew: React.FC = () => {
   const [loadingNewPosts, setLoadingNewPosts] = useState(true);
   const [newPosts, setNewPosts] = useState<Room[]>([]);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
-  const [selectedCity, setSelectedCity] = useState<string>("Hồ Chí Minh");
+  const [selectedCity, setSelectedCity] = useState<string>("Toàn quốc");
   const { provinces } = useLocations();
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<RoomDetailType | null>(null);
@@ -65,7 +65,12 @@ const HomeNew: React.FC = () => {
 
   const allRooms: Room[] = Object.values(roomsByCategory).flat();
   const featuredRooms: Room[] = recommendedRooms;
-  const forYouRooms: Room[] = [...allRooms].filter((r) => r.city === selectedCity).slice(0, 8);
+  const forYouRooms: Room[] = [...allRooms]
+  .filter((r) => {
+    if (selectedCity === "Toàn quốc" || !selectedCity) return true;
+    return r.city === selectedCity;
+  })
+  .slice(0, 8);
 
   const extractRoomsFromResponse = (response: any): Room[] => {
     if (Array.isArray(response?.content)) return response.content;
@@ -104,7 +109,12 @@ const HomeNew: React.FC = () => {
   const runSearch = () => {
     const params = new URLSearchParams();
     if (searchKeyword.trim()) params.append('keyword', searchKeyword.trim());
-    if (selectedCity) params.append('city', selectedCity);
+    
+    // Kiểm tra nếu là "Toàn quốc" thì bỏ qua
+    if (selectedCity && selectedCity !== "Toàn quốc") {
+      params.append('city', selectedCity);
+    }
+      
     navigate(`/search?${params.toString()}`);
   };
 
@@ -248,7 +258,7 @@ const HomeNew: React.FC = () => {
           subtitle="Những bài đăng được đề xuất của các đối tác"
           rooms={featuredRooms}
           loading={loadingRooms}
-          badge={`TOP ${featuredRooms.length}`}
+          badge="VIP"
           badgeStyle={{ background: "#FBBF24", color: "#78350F" }}
           emptyText="Chưa có bài nổi bật. Hãy nâng cấp VIP để đẩy top."
           onViewRoom={handleViewRoom}
@@ -257,7 +267,23 @@ const HomeNew: React.FC = () => {
         />
 
         <RoomListSection
+          title="Dành cho bạn"
+          badge="Gợi ý"
+          subtitle="Những bài đăng phù hợp với khu vực bạn chọn"
+          rooms={forYouRooms}
+          loading={loadingRooms}
+          emptyText={`Không tìm thấy phòng tại ${selectedCity || "khu vực này"}.`}
+          maxItems={8}
+          onViewRoom={handleViewRoom}
+          onViewAll={() => navigate("/search")}
+          viewAllLabel="Khám phá thêm"
+          backgroundColor="#FFFFFF"
+          accentColor="#6366F1"
+        />
+
+        <RoomListSection
           title="Bài đăng mới nhất"
+          badge="Mới"
           subtitle="Cập nhật liên tục những tin đăng mới nhất"
           rooms={newPosts}
           loading={loadingNewPosts}
@@ -268,20 +294,6 @@ const HomeNew: React.FC = () => {
           viewAllLabel="Xem tất cả"
           backgroundColor="#F8FAFC"
           accentColor="#0D9488"
-        />
-
-        <RoomListSection
-          title="Dành cho bạn"
-          subtitle={`Phòng gần bạn tại ${selectedCity || "khắp nơi"}`}
-          rooms={forYouRooms}
-          loading={loadingRooms}
-          emptyText={`Không tìm thấy phòng tại ${selectedCity || "khu vực này"}.`}
-          maxItems={8}
-          onViewRoom={handleViewRoom}
-          onViewAll={() => navigate("/search")}
-          viewAllLabel="Khám phá thêm"
-          backgroundColor="#FFFFFF"
-          accentColor="#6366F1"
         />
       </div>
 

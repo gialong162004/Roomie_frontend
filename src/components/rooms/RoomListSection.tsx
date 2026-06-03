@@ -52,7 +52,6 @@ const RoomListSection: React.FC<RoomListSectionProps> = ({
   rooms,
   loading = false,
   badge,
-  badgeStyle,
   emptyText = "Không có bài đăng nào.",
   maxItems,
   onViewRoom,
@@ -171,14 +170,6 @@ const RoomListSection: React.FC<RoomListSectionProps> = ({
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-            {badge && rooms.length > 0 && (
-              <span
-                className="px-3 py-1.5 rounded-xl font-bold text-xs md:text-sm bg-[#FBBF24] text-[#78350F]"
-                style={badgeStyle}
-              >
-                {badge}
-              </span>
-            )}
             {onViewAll && rooms.length > 0 && (
               <button
                 onClick={onViewAll}
@@ -256,8 +247,8 @@ const RoomListSection: React.FC<RoomListSectionProps> = ({
                     price={formatPrice(room.price)}
                     badge={
                       room.isVip || room.priority === "VIP" || room.priority === 1
-                        ? "VIP"
-                        : "Mới"
+                        ? "VIP" 
+                        : badge
                     }
                     isSaved={room.isSaved}
                   />
