@@ -242,7 +242,7 @@ const AppointmentModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex justify-center items-start overflow-auto z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-lg max-w-5xl w-full relative p-6 flex gap-6">
+      <div className="bg-white rounded-2xl shadow-lg max-w-5xl w-full relative p-6 flex flex-col md:flex-row gap-6">
 
         {/* Cột trái - Lịch */}
         <div className="flex-1">
@@ -321,7 +321,7 @@ const AppointmentModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Cột phải - Danh sách lịch hẹn */}
-        <div className="w-80 border-l pl-6 relative">
+        <div className="w-full md:w-80 border-t md:border-t-0 md:border-l pt-6 md:pt-0 md:pl-6 relative">
           {selectedDate ? (
             <>
               <h3 className="font-semibold text-lg mb-4">

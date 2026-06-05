@@ -1,9 +1,10 @@
 import AuthForm from "../components/AuthForm";
-import { AuthAPI } from "../api/api";
+import { AuthAPI, SurveyAPI } from "../api/api";
 import type { LoginPayload } from "../types/auth.type";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Toast from "../components/common/Toast";
+import SurveyModal from "../components/SurveyModal";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export default function Login() {
   const [showForgotPopup, setShowForgotPopup] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
+  const [showSurveyModal, setShowSurveyModal] = useState(false);
 
   const showToast = (message: string, subtitle:string, type: "success" | "error" | "info") => {
     setToast({ message, subtitle, type });
@@ -25,8 +27,6 @@ export default function Login() {
         password: data.password,
       });
 
-      console.log("✅ Full response:", res);
-
       const { token, user, message } = res.data || res || {};
 
       if (!token || !user) {
@@ -37,8 +37,18 @@ export default function Login() {
       if (token) localStorage.setItem("token", token);
       if (user) localStorage.setItem("user", JSON.stringify(user));
 
-      showToast("Đăng nhập thành công!", "Đang chuyển hướng đến trang chủ", "success");
-      setTimeout(() => navigate("/"), 1500); 
+      try {
+        const statusRes = await SurveyAPI.checkServerStatus() as any;
+        const done = statusRes.done;
+        if (!done) {
+          setShowSurveyModal(true);
+        } else {
+          showToast("Đăng nhập thành công!", "Đang chuyển hướng...", "success");
+          setTimeout(() => navigate("/"), 1500);
+        }
+      } catch (err) {
+        navigate("/");
+      } 
     } catch (err: any) {
       console.error("❌ Login failed:", err);
       const msg = err?.response?.data?.message || "Đăng nhập thất bại!";
@@ -128,6 +138,13 @@ export default function Login() {
             </form>
           </div>
         </div>
+      )}
+
+      {showSurveyModal && (
+        <SurveyModal 
+          onClose={() => navigate("/")} 
+          onSuccess={() => navigate("/")}
+        />
       )}
 
       {/* Hiển thị toast */}

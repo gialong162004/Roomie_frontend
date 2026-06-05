@@ -258,7 +258,7 @@ const HomeNew: React.FC = () => {
           subtitle="Những bài đăng được đề xuất của các đối tác"
           rooms={featuredRooms}
           loading={loadingRooms}
-          badge="VIP"
+          badge="Đối tác"
           badgeStyle={{ background: "#FBBF24", color: "#78350F" }}
           emptyText="Chưa có bài nổi bật. Hãy nâng cấp VIP để đẩy top."
           onViewRoom={handleViewRoom}

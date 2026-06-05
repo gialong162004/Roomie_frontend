@@ -35,7 +35,6 @@ const NotificationBox = ({ userId, token }: NotificationBoxProps) => {
 
   // Xử lý notification events
   const handleNewNotification = (notification: Notification) => {
-    console.log("🔔 New notification received:", notification);
     setNotifications((prev) => [notification, ...prev]);
     
     // Browser notification
@@ -48,7 +47,6 @@ const NotificationBox = ({ userId, token }: NotificationBoxProps) => {
   };
 
   const handleNotificationUpdated = (updated: Notification) => {
-    console.log("✏️ Notification updated:", updated);
     setNotifications((prev) => {
       const existing = prev.find((n) => n._id === updated._id);
       if (existing?.isRead === updated.isRead) {
@@ -59,14 +57,12 @@ const NotificationBox = ({ userId, token }: NotificationBoxProps) => {
   };
 
   const handleNotificationsMarkedAllRead = () => {
-    console.log("✅ All notifications marked as read");
     setNotifications((prev) =>
       prev.map((n) => ({ ...n, isRead: true }))
     );
   };
 
   const handleNotificationDeleted = (deletedId: string) => {
-    console.log("🗑️ Notification deleted:", deletedId);
     setNotifications((prev) => prev.filter((n) => n._id !== deletedId));
   };
 

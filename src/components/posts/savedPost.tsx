@@ -1,109 +1,98 @@
 import { useState } from 'react';
-import { Bookmark, Search, Filter } from 'lucide-react';
+import { Bookmark, Search, SlidersHorizontal, X } from 'lucide-react';
 import FavoriteRoomList from '../rooms/FavoriteRoomList';
 
 export default function SavedPostsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const categories = ['all', 'Phòng trọ', 'Căn hộ', 'Nhà nguyên căn'];
+
+  const categories = [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'Phòng trọ', label: 'Phòng trọ' },
+    { value: 'Căn hộ', label: 'Căn hộ' },
+    { value: 'Nhà nguyên căn', label: 'Nhà nguyên căn' },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
-      {/* Integrated Header with Search */}
-      <header className="bg-white border-b border-gray-200 sticky top-20 z-10 shadow-sm z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          {/* Desktop Layout */}
-          <div className="hidden md:flex items-center gap-6">
-            {/* Left: Title */}
-            <div className="flex items-center gap-3 min-w-fit">
-              <div className="bg-teal-600 p-2 rounded-lg">
-                <Bookmark className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-slate-700">Phòng Đã Lưu</h1>
-                <p className="text-sm text-slate-500">Danh sách phòng trọ đã lưu</p>
-              </div>
+    <div className="min-h-screen bg-background">
+
+      {/* Sticky header */}
+      <div className="sticky top-20 z-20 bg-white/80 backdrop-blur border-b border-borderLight">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* Title row */}
+          <div className="flex items-center gap-3 pt-5 pb-3">
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
+              <Bookmark className="w-4.5 h-4.5 text-white" strokeWidth={2} />
             </div>
-
-            {/* Right: Search & Filter
-            <div className="flex-1 flex items-center gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm phòng trọ..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent text-slate-700"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 min-w-fit">
-                <Filter className="w-5 h-5 text-slate-500" />
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 text-slate-700 bg-white"
-                >
-                  <option value="all">Tất cả</option>
-                  {categories.slice(1).map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-            </div> */}
-          </div>
-
-          {/* Mobile Layout */}
-          <div className="md:hidden space-y-4">
-            {/* Title */}
-            <div className="flex items-center gap-3">
-              <div className="bg-teal-600 p-2 rounded-lg">
-                <Bookmark className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-slate-700">Phòng Đã Lưu</h1>
-                <p className="text-sm text-slate-500">Danh sách phòng trọ đã lưu</p>
-              </div>
-            </div>
-
-            {/* Search & Filter */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Search */}
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm phòng trọ..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent text-slate-700"
-                />
-              </div>
-
-              {/* Category Filter */}
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-slate-500" />
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 text-slate-700 bg-white"
-                >
-                  <option value="all">Tất cả</option>
-                  {categories.slice(1).map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <h1 className="text-lg font-semibold text-textDark leading-tight">Phòng đã lưu</h1>
+              <p className="text-xs text-textGray">Danh sách phòng trọ yêu thích của bạn</p>
             </div>
           </div>
+
+          {/* Search + filter row */}
+          <div className="flex items-center gap-2 pb-4">
+            {/* Search input */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-textGray pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm phòng trọ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-borderLight bg-background text-textDark placeholder-textGray focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-textGray hover:text-textDark transition"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Category filter — chips on md+, select on mobile */}
+            <div className="hidden sm:flex items-center gap-1.5">
+              {categories.map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 ${
+                    selectedCategory === cat.value
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-white text-textGray border-borderLight hover:border-primary hover:text-primary'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile: dropdown */}
+            <div className="sm:hidden flex items-center gap-1.5">
+              <SlidersHorizontal className="w-4 h-4 text-textGray flex-shrink-0" />
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="text-sm py-2 pl-2 pr-6 rounded-lg border border-borderLight text-textDark bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              >
+                {categories.map((cat) => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
         </div>
-      </header>
+      </div>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <FavoriteRoomList />
+        <FavoriteRoomList searchQuery={searchQuery} category={selectedCategory} />
       </div>
+
     </div>
   );
 }

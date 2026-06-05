@@ -134,11 +134,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] bg-black/50 flex justify-center items-start overflow-auto p-4"
+      className="fixed inset-0 z-[9999] bg-black/50 flex justify-center items-start md:items-center overflow-auto p-0 md:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-lg max-w-3xl w-full relative my-8"
+        className="bg-white md:rounded-2xl shadow-lg max-w-3xl w-full relative min-h-screen md:min-h-0 container-room-detail"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Nút đóng Modal (X) */}
@@ -162,7 +162,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
 
         {/* Khu vực hiển thị Slide Ảnh */}
         <div className="relative">
-          <img src={images[currentImageIndex]} alt={type} className="w-full h-96 object-cover rounded-t-2xl" />
+          <img src={images[currentImageIndex]} alt={type} className="w-full h-64 sm:h-80 md:h-96 object-cover md:rounded-t-2xl" />
           {badge && (
             <div className="absolute top-4 left-4 bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
               {badge}
@@ -287,14 +287,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
           )}
 
           {/* Nút liên hệ & nhắn tin */}
-          <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex items-center gap-2 text-textGray">
-              <FaPhoneAlt className="text-primary" /> {phone}
+          <div className="mt-4 flex flex-row items-center justify-between gap-4 border-t pt-4 sticky bottom-0 bg-white z-10 md:static md:border-t-0 md:pt-0">
+            <div className="flex items-center gap-2 text-primary font-semibold">
+              <FaPhoneAlt /> 
+              <span>{phone}</span>
             </div>
             <button 
               onClick={handleStartChat}
               disabled={!posterId}
-              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primaryDark transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 max-w-[120px] md:flex-none md:max-w-none flex items-center justify-center gap-2 bg-primary text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-primaryDark transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
               <FaCommentAlt /> Nhắn tin
             </button>

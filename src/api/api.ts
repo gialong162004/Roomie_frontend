@@ -175,6 +175,15 @@ const forgotPassword = (email: string) => {
 const resetPassword = (email: string, code: string, newPassword: string) => {
   return axios.post("/api/auth/reset-password", { email, code, newPassword });
 }
+const checkServerStatus = () => {
+  return axios.get("/api/surveys/status");
+}
+const getSurvey = () => {
+  return axios.get("/api/surveys/template");
+}
+const submitSurvey = (answers: Record<string, string>) => {
+  return axios.post("/api/surveys/submit", { answers });
+}
 
 export const AuthAPI = { register, verifyRegister, login, getProfile, forgotPassword, resetPassword };
 export const PostAPI = { getPostDetail, getPost, createPost, getCategory, getMyPost, deletePost, updatePost, getUserPost, getFavoritePosts, 
@@ -186,3 +195,4 @@ export const NotificationAPI = { getAllNotifications, createNewNotifications, re
   deleteNotifications };
 export const SubscriptionAPI = { getAllPackages, paySubscription };
 export const ReviewAPI = { getReviewsForMe, getReviewsByMe, createReview, getReview, checkReviewEligibility };
+export const SurveyAPI = { getSurvey, checkServerStatus, submitSurvey };
