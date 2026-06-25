@@ -19,4 +19,5 @@ export interface UserProfile {
   isVerified: boolean;
   createdAt: string;
   introduce?: string;
+  isPostActivated: boolean;
 }

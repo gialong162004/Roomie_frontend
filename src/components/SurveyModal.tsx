@@ -39,10 +39,6 @@ interface SurveyModalProps {
 
 type Answers = Record<string, string>;
 
-// ── Type mapping: API questionId → UI render type ──────────────────────────────
-// Vì API trả về type "text"/"select" không khớp với UI mong muốn,
-// ta override lại dựa theo questionId.
-
 const QUESTION_TYPE_MAP: Record<string, Question["type"]> = {
   q_city: "select",
   q_category: "chip",
@@ -50,6 +46,9 @@ const QUESTION_TYPE_MAP: Record<string, Question["type"]> = {
 };
 
 function resolveType(q: Question): Question["type"] {
+  if (q.options && q.options.length > 0 && q.options.length < 5) {
+    return "chip";
+  }
   return QUESTION_TYPE_MAP[q.questionId] ?? q.type;
 }
 
@@ -79,6 +78,14 @@ function ChipGroup({ options, value, onChange }: ChipGroupProps) {
 function QuestionField({ question, value, onChange }: QuestionFieldProps) {
   const type = resolveType(question);
 
+  // 1. Trường hợp Chip
+  if (type === "chip") {
+    return (
+      <ChipGroup options={question.options} value={value} onChange={onChange} />
+    );
+  }
+
+  // 2. Trường hợp Select
   if (type === "select") {
     return (
       <select
@@ -86,25 +93,24 @@ function QuestionField({ question, value, onChange }: QuestionFieldProps) {
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2 rounded-lg border border-borderLight bg-white text-textDark text-sm focus:outline-none focus:border-primary cursor-pointer"
       >
-        <option value="" disabled>
-          Chọn {question.label.toLowerCase()}...
-        </option>
+        <option value="" disabled>Chọn {question.label.toLowerCase()}...</option>
         {question.options.map((opt: string) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
+          <option key={opt} value={opt}>{opt}</option>
         ))}
       </select>
     );
   }
 
-  if (type === "chip") {
-    return (
-      <ChipGroup options={question.options} value={value} onChange={onChange} />
-    );
-  }
-
-  return null;
+  // 3. Trường hợp Text (Input nhập liệu)
+  return (
+    <input
+      type="text"
+      value={value}
+      placeholder="Nhập câu trả lời..."
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-3 py-2 rounded-lg border border-borderLight bg-white text-textDark text-sm focus:outline-none focus:border-primary"
+    />
+  );
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────────

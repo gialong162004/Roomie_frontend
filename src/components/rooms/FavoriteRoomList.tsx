@@ -97,6 +97,10 @@ const FavoriteRoomList: React.FC<FavoriteRoomListProps> = ({
     fetchRoomDetail();
   }, [selectedPostId]);
 
+  const handleRemoveFromList = (postId: string) => {
+    setRooms((prev) => prev.filter((room) => room._id !== postId));
+  };
+
   // Filter theo searchQuery và category
   const filteredRooms = useMemo(() => {
     return rooms.filter((room) => {
@@ -198,6 +202,7 @@ const FavoriteRoomList: React.FC<FavoriteRoomListProps> = ({
             badge={room.badge}
             isSaved={true}
             onView={() => setSelectedPostId(room._id)}
+            onToggleFavorite={() => handleRemoveFromList(room._id)}
           />
         ))}
       </div>

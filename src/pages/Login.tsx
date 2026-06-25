@@ -4,7 +4,6 @@ import type { LoginPayload } from "../types/auth.type";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Toast from "../components/common/Toast";
-import SurveyModal from "../components/SurveyModal";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,7 +13,6 @@ export default function Login() {
   const [showForgotPopup, setShowForgotPopup] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
-  const [showSurveyModal, setShowSurveyModal] = useState(false);
 
   const showToast = (message: string, subtitle:string, type: "success" | "error" | "info") => {
     setToast({ message, subtitle, type });
@@ -30,29 +28,28 @@ export default function Login() {
       const { token, user, message } = res.data || res || {};
 
       if (!token || !user) {
-        showToast(message || "Không nhận được dữ liệu hợp lệ từ máy chủ!", "", "error");
+        showToast(message || "Không nhận được dữ liệu hợp lệ!", "", "error");
         return;
       }
 
-      if (token) localStorage.setItem("token", token);
-      if (user) localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
 
+      // Kiểm tra trạng thái khảo sát và lưu flag vào localStorage thay vì mở modal ngay
       try {
         const statusRes = await SurveyAPI.checkServerStatus() as any;
-        const done = statusRes.done;
-        if (!done) {
-          setShowSurveyModal(true);
-        } else {
-          showToast("Đăng nhập thành công!", "Đang chuyển hướng...", "success");
-          setTimeout(() => navigate("/"), 1500);
+        if (!statusRes.done) {
+          localStorage.setItem("showSurvey", "true");
         }
       } catch (err) {
-        navigate("/");
-      } 
+        console.error("Lỗi kiểm tra khảo sát:", err);
+      }
+
+      showToast("Đăng nhập thành công!", "Đang chuyển hướng...", "success");
+      navigate("/"); // Chuyển hướng về Home
     } catch (err: any) {
-      console.error("❌ Login failed:", err);
       const msg = err?.response?.data?.message || "Đăng nhập thất bại!";
-      showToast(msg, "Vui lòng kiểm tra lại thông tin tài khoản.", "error");
+      showToast(msg, "Vui lòng kiểm tra lại thông tin.", "error");
     }
   };
 
@@ -138,13 +135,6 @@ export default function Login() {
             </form>
           </div>
         </div>
-      )}
-
-      {showSurveyModal && (
-        <SurveyModal 
-          onClose={() => navigate("/")} 
-          onSuccess={() => navigate("/")}
-        />
       )}
 
       {/* Hiển thị toast */}

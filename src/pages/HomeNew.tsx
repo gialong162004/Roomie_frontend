@@ -7,6 +7,7 @@ import { useRoomStore } from "../store/roomStore";
 import { useLocations } from "../hooks/useLocations";
 import RoomListSection from "../components/rooms/RoomListSection";
 import { useNavigate } from "react-router-dom";
+import SurveyModal from "../components/SurveyModal";
 
 interface Room {
   _id: string;
@@ -62,6 +63,7 @@ const HomeNew: React.FC = () => {
   const [selectedRoom, setSelectedRoom] = useState<RoomDetailType | null>(null);
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const [showSurveyModal, setShowSurveyModal] = useState(false);
 
   const allRooms: Room[] = Object.values(roomsByCategory).flat();
   const featuredRooms: Room[] = recommendedRooms;
@@ -117,6 +119,21 @@ const HomeNew: React.FC = () => {
       
     navigate(`/search?${params.toString()}`);
   };
+
+  useEffect(() => {
+    const shouldShowSurvey = localStorage.getItem("showSurvey");
+
+    if (shouldShowSurvey === "true") {
+      // Đợi 500ms để trang render ổn định rồi mới hiện modal
+      const timer = setTimeout(() => {
+        setShowSurveyModal(true);
+        // Xóa flag để không hiển thị lại khi refresh trang
+        localStorage.removeItem("showSurvey");
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // Fetch categories
   useEffect(() => {
@@ -362,6 +379,13 @@ const HomeNew: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {showSurveyModal && (
+        <SurveyModal 
+          onClose={() => setShowSurveyModal(false)} 
+          onSuccess={() => setShowSurveyModal(false)}
+        />
+      )}
 
       {selectedRoom && (
         <RoomDetail

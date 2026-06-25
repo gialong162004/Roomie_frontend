@@ -184,6 +184,15 @@ const getSurvey = () => {
 const submitSurvey = (answers: Record<string, string>) => {
   return axios.post("/api/surveys/submit", { answers });
 }
+const getSubscriptionHistory = () => {
+  return axios.get("/api/subscriptions/history");
+}
+const postActivation = () => {
+  return axios.post("/api/subscriptions/zalo/post-activation");
+}
+const historyPayment = () => {
+  return axios.get("/api/subscriptions/payment-history");
+}
 
 export const AuthAPI = { register, verifyRegister, login, getProfile, forgotPassword, resetPassword };
 export const PostAPI = { getPostDetail, getPost, createPost, getCategory, getMyPost, deletePost, updatePost, getUserPost, getFavoritePosts, 
@@ -193,6 +202,6 @@ export const MessageAPI = { getConversation, createConversation, deleteConversat
 export const NoteAPI = { createNote, updateNote, getNote, deleteNote };
 export const NotificationAPI = { getAllNotifications, createNewNotifications, readNotifications, readAllNotifications,
   deleteNotifications };
-export const SubscriptionAPI = { getAllPackages, paySubscription };
+export const SubscriptionAPI = { getAllPackages, paySubscription, getSubscriptionHistory, postActivation, historyPayment };
 export const ReviewAPI = { getReviewsForMe, getReviewsByMe, createReview, getReview, checkReviewEligibility };
 export const SurveyAPI = { getSurvey, checkServerStatus, submitSurvey };

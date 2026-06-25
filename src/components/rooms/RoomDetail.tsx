@@ -134,11 +134,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] bg-black/50 flex justify-center items-start md:items-center overflow-auto p-0 md:p-4"
+      className="fixed inset-0 z-[9999] bg-black/50 flex justify-center items-start overflow-y-auto p-0 md:p-8"
       onClick={onClose}
     >
       <div
-        className="bg-white md:rounded-2xl shadow-lg max-w-3xl w-full relative min-h-screen md:min-h-0 container-room-detail"
+        className="bg-white md:rounded-2xl shadow-lg max-w-3xl w-full relative min-h-screen md:min-h-[auto] container-room-detail"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Nút đóng Modal (X) */}

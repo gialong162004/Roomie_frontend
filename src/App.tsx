@@ -23,6 +23,7 @@ function App() {
         <Route path="saved-posts" element={<SavedPostsPage />} />
         <Route path="about" element={<IntroPage />} />
         <Route path="pricing" element={<PricingPage />} />
+        <Route path="my-plans" element={<PricingPage />} />
         <Route path="map" element={<MapSearchRadius />} />
       </Route>
       <Route path="login" element={<Login />} />

@@ -15,6 +15,7 @@ interface RoomCardProps {
   isSaved?: boolean;
   rating?: number;
   nights?: number;
+  onToggleFavorite?: (isSaved: boolean) => void;
 }
 
 const RoomCard: React.FC<RoomCardProps> = ({
@@ -28,6 +29,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
   badge,
   isSaved: initialSaved = false,
   rating,
+  onToggleFavorite,
 }) => {
   const [isSaved, setIsSaved] = useState(initialSaved);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,6 +43,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
       if (isSaved) {
         await PostAPI.removeFavoritePost(_id);
         setIsSaved(false);
+        onToggleFavorite?.(false);
         showToast("Thành công!", {
           type: "success",
           subtitle: "Đã xoá khỏi danh sách yêu thích.",
@@ -48,6 +51,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
       } else {
         await PostAPI.addFavoritePost(_id);
         setIsSaved(true);
+        onToggleFavorite?.(true);
         showToast("Thành công!", {
           type: "success",
           subtitle: "Đã thêm vào danh sách yêu thích.",

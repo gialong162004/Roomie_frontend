@@ -2,13 +2,12 @@ import { useState, useEffect } from "react";
 import { Edit2, Save, X, Home, Star, FileText } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import CreatePostModal from "../components/posts/CreatePostModal";
-import { UserAPI, PostAPI, ReviewAPI } from "../api/api";
+import { UserAPI, PostAPI, ReviewAPI, SubscriptionAPI } from "../api/api";
 import PostCard from "../components/posts/PostCard";
 import { useToast } from "../components/common/ToastProvider";
 import type { UserProfile } from "../types/user.type";
 import type { Post } from "../types/post.type";
 
-// ---- Types ----
 interface ReviewerInfo {
   _id: string;
   name: string;
@@ -16,7 +15,7 @@ interface ReviewerInfo {
 }
 interface Review {
   _id: string;
-  reviewer: ReviewerInfo;  // field thực tế từ API
+  reviewer: ReviewerInfo;
   reviewee: string;
   rating: number;
   text?: string;
@@ -213,6 +212,7 @@ const ProfilePage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { showToast } = useToast();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "",
     dateOfBirth: "",
@@ -459,6 +459,29 @@ const ProfilePage = () => {
     }
   };
 
+  const handleOpenCreatePost = async () => {
+    if (profile?.isPostActivated) {
+      setIsModalOpen(true);
+      return;
+    }
+    setShowConfirmModal(true);
+  };
+
+  const proceedToPayment = async () => {
+    setShowConfirmModal(false);
+    showToast("Đang tạo yêu cầu thanh toán...", { type: "info" });
+    
+    try {
+      const res = (await SubscriptionAPI.postActivation()) as any;
+      if (res?.orderUrl) {
+        window.open(res.orderUrl, "_blank");
+        showToast("Vui lòng hoàn tất thanh toán", { type: "info" });
+      }
+    } catch (error) {
+      showToast("Có lỗi xảy ra, vui lòng thử lại sau", { type: "error" });
+    }
+  };
+
   // ============================================================
   return (
     <div className="min-h-screen bg-background py-8 px-4 mt-16">
@@ -620,7 +643,13 @@ const ProfilePage = () => {
                       Đăng kí gói
                     </button>
                     <button
-                      onClick={() => setIsModalOpen(true)}
+                      onClick={() => navigate("/my-plans")}
+                      className="px-4 py-2 border border-primary text-primary hover:bg-primary/5 rounded-lg transition text-sm"
+                    >
+                      Gói đã đăng kí
+                    </button>
+                    <button
+                      onClick={handleOpenCreatePost}
                       className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primaryDark transition flex items-center gap-2 text-sm"
                     >
                       <Home className="w-4 h-4" />
@@ -790,6 +819,33 @@ const ProfilePage = () => {
           />
         )}
       </div>
+      {showConfirmModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+      <div className="text-amber-500 mb-4">
+        {/* Bạn có thể thay bằng icon AlertCircle từ lucide-react */}
+        <h3 className="text-lg font-bold text-textDark">Yêu cầu thanh toán</h3>
+      </div>
+      <p className="text-sm text-textGray mb-6">
+        Bạn cần thanh toán phí đăng bài để có thể sử dụng tính năng này. Bạn có muốn tiếp tục đến trang thanh toán?
+      </p>
+      <div className="flex gap-3">
+        <button
+          onClick={() => setShowConfirmModal(false)}
+          className="flex-1 py-2 rounded-xl border border-borderLight text-textGray hover:bg-gray-50 transition"
+        >
+          Hủy
+        </button>
+        <button
+          onClick={proceedToPayment}
+          className="flex-1 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition"
+        >
+          Xác nhận
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };

@@ -128,7 +128,7 @@ const BotChatWidget: React.FC = () => {
       console.error('❌ Error fetching Bot response:', error);
       setMessages(prev => [...prev, {
         id: `bot_err_${Date.now()}`,
-        text: '⚠️ Không thể kết nối với hệ thống AI. Vui lòng thử lại!',
+        text: '⚠️ Không thể kết nối với hệ thống AI. Vui lòng thử lại sau!',
         sender: 'landlord',
         timestamp: new Date(),
         senderId: 'bot',
