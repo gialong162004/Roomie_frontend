@@ -155,7 +155,7 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) =
               {post.title}
             </h3>
 
-            <p className="text-sm text-textGray mb-3 line-clamp-2">
+            <p className="text-sm text-textGray mb-3 whitespace-pre-wrap">
               {post.description}
             </p>
 

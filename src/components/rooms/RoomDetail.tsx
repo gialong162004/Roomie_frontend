@@ -255,7 +255,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
           </div>
 
           <h2 className="text-2xl font-semibold">{type}</h2>
-          <p className="text-textGray">{description}</p>
+          <p className="text-textGray whitespace-pre-wrap">{description}</p>
 
           <div className="flex gap-4 text-textGray text-sm flex-wrap">
             {area && <div className="flex items-center gap-1"><FaRulerCombined className="text-primary" />{area}</div>}
