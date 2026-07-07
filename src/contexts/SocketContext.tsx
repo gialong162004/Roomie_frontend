@@ -21,7 +21,7 @@ export const SocketProvider = ({ children, userId, token }: SocketProviderProps)
     if (!userId) return;
 
     // Tạo 1 socket connection duy nhất
-    const socket = io('http://localhost:5000', {
+    const socket = io('https://tlcn-roomie-api.onrender.com', {
       transports: ['websocket'],
       autoConnect: true,
       auth: { token },

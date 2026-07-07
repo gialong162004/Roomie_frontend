@@ -32,7 +32,7 @@ export const useSocket = ({
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    socketRef.current = io('http://localhost:5000', {
+    socketRef.current = io('https://tlcn-roomie-api.onrender.com', {
       transports: ['websocket'],
       autoConnect: true,
     });
