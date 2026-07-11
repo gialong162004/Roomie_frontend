@@ -5,6 +5,8 @@ import CreatePostModal from "../components/posts/CreatePostModal";
 import { UserAPI, PostAPI, ReviewAPI, SubscriptionAPI } from "../api/api";
 import PostCard from "../components/posts/PostCard";
 import { useToast } from "../components/common/ToastProvider";
+import ConfirmModal from "../components/common/ConfirmModal";
+import RoomDetail from "../components/rooms/RoomDetail";
 import type { UserProfile } from "../types/user.type";
 import type { Post } from "../types/post.type";
 
@@ -226,6 +228,9 @@ const ProfilePage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
 
   // ---- Review states ----
   type TabType = "posts" | "reviews";
@@ -294,6 +299,25 @@ const ProfilePage = () => {
     };
     if (profile) fetchPosts();
   }, [userId, isOwner, profile]);
+
+  // ----- Fetch selected post detail for RoomDetail -----
+  useEffect(() => {
+    const fetchSelectedRoom = async () => {
+      if (!selectedPostId) {
+        setSelectedRoom(null);
+        return;
+      }
+
+      try {
+        const res = (await PostAPI.getPostDetail(selectedPostId)) as any;
+        setSelectedRoom(res?.data ?? res);
+      } catch (error) {
+        console.error("Lỗi lấy chi tiết bài đăng:", error);
+      }
+    };
+
+    fetchSelectedRoom();
+  }, [selectedPostId]);
 
   // ----- Fetch reviews -----
   useEffect(() => {
@@ -403,11 +427,21 @@ const ProfilePage = () => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleDeletePost = async (postId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa bài đăng này?")) return;
+  const handleDeletePost = (postId: string) => {
+    setPostToDelete(postId);
+  };
+
+  const handleOpenRoomDetail = (postId: string) => {
+    setSelectedPostId(postId);
+  };
+
+  const confirmDeletePost = async () => {
+    if (!postToDelete) return;
     try {
+      const postId = postToDelete;
       await PostAPI.deletePost(postId);
       setPosts(posts.filter((post) => post._id !== postId));
+      setPostToDelete(null);
       showToast("Xóa bài đăng thành công!", { type: "success", subtitle: "Bài đăng đã được xóa" });
     } catch (error) {
       console.error("Lỗi xóa bài đăng:", error);
@@ -436,6 +470,11 @@ const ProfilePage = () => {
   };
 
   const handleCloseModal = () => { setIsModalOpen(false); setEditingPost(null); };
+
+  const handleCloseRoomDetail = () => {
+    setSelectedRoom(null);
+    setSelectedPostId(null);
+  };
 
   // ---- Submit review ----
   const handleSubmitReview = async (rating: number, text: string) => {
@@ -720,6 +759,7 @@ const ProfilePage = () => {
                       key={post._id}
                       post={post}
                       isOwner={isOwner}
+                      onClick={handleOpenRoomDetail}
                       onEdit={handleEditPost}
                       onDelete={handleDeletePost}
                     />
@@ -818,34 +858,44 @@ const ProfilePage = () => {
             onClose={() => setShowReviewModal(false)}
           />
         )}
+
+        {selectedRoom && (
+          <RoomDetail
+            postId={selectedRoom._id}
+            images={selectedRoom.images?.length ? selectedRoom.images : ["https://visaho.vn/upload_images/images/2022/04/01/phan-loai-can-ho-chung-cu-7.jpg"]}
+            type={selectedRoom.title}
+            area={selectedRoom.superficies ? `${selectedRoom.superficies} m²` : "-- m²"}
+            address={`${selectedRoom.address}, ${selectedRoom.district}, ${selectedRoom.city}`}
+            price={(Number(selectedRoom.price) || 0).toLocaleString("vi-VN")}
+            badge={selectedRoom.category?.name || "Đã duyệt"}
+            description={selectedRoom.description}
+            posterName={selectedRoom.userId?.name || selectedRoom.owner?.name}
+            posterId={selectedRoom.userId?._id || selectedRoom.owner?._id}
+            phone={selectedRoom.userId?.phone || selectedRoom.owner?.phone || "0123 456 789"}
+            postedMinutesAgo={selectedRoom.updatedAt}
+            onClose={handleCloseRoomDetail}
+          />
+        )}
       </div>
-      {showConfirmModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
-      <div className="text-amber-500 mb-4">
-        {/* Bạn có thể thay bằng icon AlertCircle từ lucide-react */}
-        <h3 className="text-lg font-bold text-textDark">Yêu cầu thanh toán</h3>
-      </div>
-      <p className="text-sm text-textGray mb-6">
-        Bạn cần thanh toán phí đăng bài để có thể sử dụng tính năng này. Bạn có muốn tiếp tục đến trang thanh toán?
-      </p>
-      <div className="flex gap-3">
-        <button
-          onClick={() => setShowConfirmModal(false)}
-          className="flex-1 py-2 rounded-xl border border-borderLight text-textGray hover:bg-gray-50 transition"
-        >
-          Hủy
-        </button>
-        <button
-          onClick={proceedToPayment}
-          className="flex-1 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition"
-        >
-          Xác nhận
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      <ConfirmModal
+        isOpen={postToDelete !== null}
+        title="Xóa bài đăng"
+        description="Bạn có chắc chắn muốn xóa bài đăng này? Hành động này không thể hoàn tác."
+        onCancel={() => setPostToDelete(null)}
+        onConfirm={confirmDeletePost}
+        cancelText="Hủy"
+        confirmText="Xóa"
+        confirmButtonClassName="bg-red-500 text-white hover:bg-red-600"
+      />
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        title="Yêu cầu thanh toán"
+        description="Bạn cần thanh toán phí đăng bài để có thể sử dụng tính năng này. Bạn có muốn tiếp tục đến trang thanh toán?"
+        onCancel={() => setShowConfirmModal(false)}
+        onConfirm={proceedToPayment}
+        cancelText="Hủy"
+        confirmText="Xác nhận"
+      />
     </div>
   );
 };

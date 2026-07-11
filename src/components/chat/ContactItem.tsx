@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { type Contact } from './ContactList';
+import ConfirmModal from '../common/ConfirmModal';
 
 interface ContactItemProps {
   contact: Contact;
@@ -8,11 +9,16 @@ interface ContactItemProps {
 }
 
 export const ContactItem: React.FC<ContactItemProps> = ({ contact, onSelect, onDelete }) => {
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Bạn có chắc muốn xóa cuộc trò chuyện này?')) {
-      onDelete(contact.id);
-    }
+    setShowConfirmModal(true);
+  };
+
+  const confirmDelete = () => {
+    onDelete(contact.id);
+    setShowConfirmModal(false);
   };
 
   return (
@@ -59,6 +65,17 @@ export const ContactItem: React.FC<ContactItemProps> = ({ contact, onSelect, onD
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
       </button>
+
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        title="Xóa cuộc trò chuyện"
+        description={`Bạn có chắc muốn xóa cuộc trò chuyện với ${contact.name}? Hành động này không thể hoàn tác.`}
+        onCancel={() => setShowConfirmModal(false)}
+        onConfirm={confirmDelete}
+        cancelText="Hủy"
+        confirmText="Xóa"
+        confirmButtonClassName="bg-red-500 text-white hover:bg-red-600"
+      />
     </div>
   );
 };

@@ -36,9 +36,10 @@ interface PostCardProps {
   onEdit?: (postId: string) => void;
   onDelete?: (postId: string) => void;
   onBoost?: (postId: string, packageId: string) => void; // gọi API / redirect thanh toán
+  onClick?: (postId: string) => void;
 }
 
-const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) => {
+const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost, onClick }: PostCardProps) => {
   const { showToast } = useToast();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -100,12 +101,20 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) =
 
   return (
     <>
-      <div className="bg-cardBg rounded-lg shadow-sm overflow-hidden hover:shadow-md transition border border-borderLight">
+      <div
+        className={`bg-cardBg rounded-lg shadow-sm overflow-hidden hover:shadow-md transition border border-borderLight ${
+          onClick ? "cursor-pointer" : ""
+        }`}
+        onClick={() => onClick?.(post._id)}
+      >
         <div className="flex flex-col sm:flex-row">
           {/* Phần ảnh bên trái */}
           <div className="sm:w-80 relative">
             <div className="grid grid-cols-2 gap-1 p-1">
-              {displayImages.map((image, index) => (
+              {displayImages.map((src, index) => {
+              const isVideo = src?.match(/\.(mp4|webm|ogv|mov|avi)$/i);
+
+              return (
                 <div
                   key={index}
                   className={`relative cursor-pointer ${
@@ -114,20 +123,38 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) =
                     displayImages.length === 3 && index === 0 ? "col-span-2 h-40" :
                     "h-32"
                   }`}
-                  onClick={() => openViewer(index)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openViewer(index);
+                  }}
                 >
-                  <img
-                    src={image}
-                    alt={`${post.title} ${index + 1}`}
-                    className="w-full h-full object-cover rounded hover:opacity-90 transition"
-                  />
+                  {/* ✅ Chỉnh sửa tại đây: Logic render Media */}
+                  {isVideo ? (
+                    <video 
+                      src={src} 
+                      className="w-full h-full object-cover rounded hover:opacity-90 transition"
+                      muted
+                      playsInline
+                      autoPlay
+                      loop
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={src || "https://via.placeholder.com/300?text=No+Image"} // Fallback nếu URL rỗng
+                      alt={`${post.title} ${index + 1}`}
+                      className="w-full h-full object-cover rounded hover:opacity-90 transition"
+                    />
+                  )}
+
                   {index === 3 && remainingCount > 0 && (
-                    <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded hover:bg-opacity-70 transition">
+                    <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded hover:bg-opacity-70 transition z-10">
                       <span className="text-white text-2xl font-bold">+{remainingCount}</span>
                     </div>
                   )}
                 </div>
-              ))}
+              );
+            })}
             </div>
 
             <span
@@ -150,28 +177,30 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) =
           </div>
 
           {/* Phần thông tin bên phải */}
-          <div className="flex-1 p-5 flex flex-col">
+          <div className="flex-1 p-5 flex flex-col h-[400px]">
             <h3 className="text-xl font-bold text-textDark hover:text-primary cursor-pointer mb-2 line-clamp-2">
               {post.title}
             </h3>
 
-            <p className="text-sm text-textGray mb-3 whitespace-pre-wrap">
-              {post.description}
-            </p>
+            <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin">
+              <p className="text-sm text-textGray mb-3 whitespace-pre-wrap">
+                {post.description}
+              </p>
 
-            <div className="flex items-center gap-4 mb-3 text-sm">
-              <div className="flex items-center gap-1 text-textDark">
-                <Home className="w-4 h-4" />
-                <span className="font-medium">{post.category?.name}</span>
+              <div className="flex items-center gap-4 mb-3 text-sm">
+                <div className="flex items-center gap-1 text-textDark">
+                  <Home className="w-4 h-4" />
+                  <span className="font-medium">{post.category?.name}</span>
+                </div>
+                <div className="flex items-center gap-1 text-textDark">
+                  <span className="font-medium">{post.superficies}m²</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1 text-textDark">
-                <span className="font-medium">{post.superficies}m²</span>
-              </div>
-            </div>
 
-            <div className="flex items-start gap-2 text-textGray mb-4">
-              <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span className="text-sm line-clamp-1">{post.address}</span>
+              <div className="flex items-start gap-2 text-textGray mb-4">
+                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span className="text-sm line-clamp-1">{post.address}</span>
+              </div>
             </div>
 
             <div className="flex items-center justify-between mt-auto pt-3 border-t border-borderLight">
@@ -192,7 +221,10 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) =
             {isOwner && (
               <div className="flex flex-wrap gap-2 mt-3">
                 <button
-                  onClick={handleToggleAvailable}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleAvailable();
+                  }}
                   disabled={isUpdatingAvailable}
                   className={`flex-1 min-w-[140px] px-4 py-2 text-white rounded transition text-sm font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
                     available ? "bg-textGray hover:bg-textDark" : "bg-primary hover:bg-primary/90"
@@ -206,13 +238,19 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) =
                 </button>
 
                 <button
-                  onClick={() => onEdit?.(post._id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit?.(post._id);
+                  }}
                   className="flex-1 min-w-[140px] px-4 py-2 text-primary border border-primary hover:bg-secondary rounded transition text-sm font-medium"
                 >
                   Sửa
                 </button>
                 <button
-                  onClick={() => onDelete?.(post._id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete?.(post._id);
+                  }}
                   className="flex-1 min-w-[140px] px-4 py-2 text-red-600 border border-red-600 hover:bg-red-50 rounded transition text-sm font-medium"
                 >
                   Xóa
@@ -322,12 +360,27 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) =
             </button>
           )}
 
-          <img
-            src={post.images[currentImageIndex]}
-            alt={`${post.title} ${currentImageIndex + 1}`}
-            className="max-w-[90vw] max-h-[90vh] object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {(() => {
+            const currentSrc = post.images[currentImageIndex];
+            const isVideo = currentSrc?.match(/\.(mp4|webm|ogv|mov|avi)$/i);
+
+            return isVideo ? (
+              <video
+                src={currentSrc}
+                className="max-w-[90vw] max-h-[90vh] object-contain"
+                controls
+                autoPlay
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <img
+                src={currentSrc}
+                alt={`${post.title} ${currentImageIndex + 1}`}
+                className="max-w-[90vw] max-h-[90vh] object-contain"
+                onClick={(e) => e.stopPropagation()}
+              />
+            );
+          })()}
 
           {post.images.length > 1 && (
             <button
@@ -339,19 +392,31 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost }: PostCardProps) =
           )}
 
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 overflow-x-auto max-w-[90vw] px-4">
-            {post.images.map((image, index) => (
-              <img
-                key={index}
-                src={image}
-                alt={`Thumbnail ${index + 1}`}
-                onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(index); }}
-                className={`w-16 h-16 object-cover rounded cursor-pointer transition ${
-                  currentImageIndex === index
-                    ? "ring-2 ring-primary opacity-100"
-                    : "opacity-50 hover:opacity-75"
-                }`}
-              />
-            ))}
+            {post.images.map((src, index) => {
+              const isVideo = src?.match(/\.(mp4|webm|ogv|mov|avi)$/i);
+              const commonClasses = `w-16 h-16 object-cover rounded cursor-pointer transition ${
+                currentImageIndex === index ? "ring-2 ring-primary opacity-100" : "opacity-50 hover:opacity-75"
+              }`;
+
+              return (
+                <div key={index} className="relative" onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(index); }}>
+                  {isVideo ? (
+                    <video src={src} className={commonClasses} muted />
+                  ) : (
+                    <img src={src} alt={`Thumbnail ${index + 1}`} className={commonClasses} />
+                  )}
+                  
+                  {/* Icon nhỏ báo hiệu đây là video nếu muốn */}
+                  {isVideo && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="bg-black/50 rounded-full p-1">
+                        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

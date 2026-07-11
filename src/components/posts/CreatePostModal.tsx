@@ -181,7 +181,7 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Ví dụ: Phòng trọ giá rẻ gần trường ĐH Bách Khoa"
-              className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors"
+              className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors placeholder:text-gray-400"
               required
             />
             <p className="text-textGray text-sm mt-1">{formData.title.length}/100 ký tự</p>
@@ -197,7 +197,7 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Mô tả chi tiết về phòng trọ: tiện nghi, vị trí, quy định..."
-              className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors resize-none"
+              className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors resize-none placeholder:text-gray-400"
               required
             />
           </div>
@@ -212,10 +212,15 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
                 <Home className="absolute left-3 top-1/2 -translate-y-1/2 text-textGray" size={20} />
                 <input
                   type="number"
-                  value={formData.superficies}
-                  onChange={(e) => setFormData({ ...formData, superficies: Number(e.target.value) })}
-                  placeholder="20"
-                  className="w-full pl-10 pr-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors"
+                  // Nếu giá trị là 0 thì hiển thị chuỗi rỗng "", ngược lại hiển thị số đó
+                  value={formData.superficies === 0 ? "" : formData.superficies}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Nếu ô input rỗng thì set là 0, nếu có giá trị thì ép sang Number
+                    setFormData({ ...formData, superficies: value === "" ? 0 : Number(value) });
+                  }}
+                  placeholder="0"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors placeholder:text-gray-400"
                   required
                 />
               </div>
@@ -229,10 +234,13 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-textGray" size={20} />
                 <input
                   type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                  placeholder="2000000"
-                  className="w-full pl-10 pr-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors"
+                  value={formData.price === 0 ? "" : formData.price}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, price: value === "" ? 0 : Number(value) });
+                  }}
+                  placeholder="0"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors placeholder:text-gray-400"
                   required
                 />
               </div>
@@ -247,7 +255,7 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
             <select
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors bg-white"
+              className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors bg-white placeholder:text-gray-400"
               required
             >
               <option value="">Chọn danh mục</option>
@@ -263,28 +271,28 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-textDark font-semibold mb-2">
-                Tỉnh/Thành phố <span className="text-red-500">*</span>
+                Tỉnh/Thành phố (Sau sáp nhập) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 placeholder="Ví dụ: Hồ Chí Minh"
-                className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors"
+                className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors placeholder-gray-400"
                 required
               />
             </div>
 
             <div>
               <label className="block text-textDark font-semibold mb-2">
-                Quận/Huyện <span className="text-red-500">*</span>
+                Quận/Huyện/Xã (Sau sáp nhập) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.district}
                 onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                 placeholder="Ví dụ: Quận 1"
-                className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors"
+                className="w-full px-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors placeholder:text-gray-400"
                 required
               />
             </div>
@@ -302,7 +310,7 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="Số nhà, tên đường, phường/xã"
-                className="w-full pl-10 pr-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-3 border-2 border-borderLight rounded-lg focus:border-primary focus:outline-none transition-colors placeholder-gray-400"
                 required
               />
             </div>
@@ -311,13 +319,13 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
           {/* Upload ảnh */}
           <div>
             <label className="block text-textDark font-semibold mb-2">
-              Hình ảnh phòng trọ {!editingPost && <span className="text-red-500">*</span>}
+              Hình ảnh & Video {!editingPost && <span className="text-red-500">*</span>}
             </label>
             <div className="border-2 border-dashed border-primary bg-secondary rounded-lg p-6 text-center hover:bg-primaryLight hover:bg-opacity-10 transition-colors cursor-pointer">
               <input
                 type="file"
                 multiple
-                accept="image/*"
+                accept="image/*,video/*"
                 onChange={handleImageChange}
                 className="hidden"
                 id="imageUpload"
@@ -330,10 +338,10 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
                 </p>
                 <p className="text-textGray text-sm mt-1">
                   {formData.imageFiles.length > 0 
-                    ? `Đã chọn ${formData.imageFiles.length} ảnh mới` 
+                    ? `Đã chọn ${formData.imageFiles.length} tệp tin mới` 
                     : editingPost 
-                      ? `Đang sử dụng ${editingPost.images.length} ảnh hiện tại`
-                      : 'Hỗ trợ: JPG, PNG (tối đa 10 ảnh)'}
+                      ? `Đang giữ nguyên ${editingPost.images.length} tệp tin cũ`
+                      : 'Hỗ trợ: JPG, PNG, MP4 (tối đa 10 tệp)'}
                 </p>
               </label>
             </div>
@@ -341,14 +349,20 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
             {/* Hiển thị ảnh hiện tại khi edit */}
             {editingPost && editingPost.images.length > 0 && (
               <div className="mt-3 grid grid-cols-4 gap-2">
-                {editingPost.images.slice(0, 4).map((img, index) => (
-                  <img
-                    key={index}
-                    src={img}
-                    alt={`Ảnh ${index + 1}`}
-                    className="w-full h-20 object-cover rounded border border-borderLight"
-                  />
-                ))}
+                {editingPost.images.slice(0, 4).map((url, index) => {
+                  const isVideo = url.match(/\.(mp4|mov|avi|wmv)$/i);
+                  return (
+                    <div key={index} className="relative w-full h-20 rounded border border-borderLight overflow-hidden">
+                      {isVideo ? (
+                        <video className="w-full h-full object-cover">
+                          <source src={url} type="video/mp4" />
+                        </video>
+                      ) : (
+                        <img src={url} alt={`Media ${index + 1}`} className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

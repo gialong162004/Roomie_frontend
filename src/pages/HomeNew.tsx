@@ -61,6 +61,7 @@ const HomeNew: React.FC = () => {
   const { provinces } = useLocations();
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<RoomDetailType | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [showSurveyModal, setShowSurveyModal] = useState(false);
@@ -195,7 +196,33 @@ const HomeNew: React.FC = () => {
     })();
   }, [selectedPostId]);
 
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const response = (await PostAPI.getFavoritePosts()) as any;
+        const favorites = response?.data || response || [];
+        const ids = favorites
+          .map((item: any) => item?.post?._id || item?._id)
+          .filter(Boolean);
+        setFavoriteIds(new Set(ids));
+      } catch (error) {
+        console.error("Lỗi lấy danh sách yêu thích:", error);
+      }
+    };
+
+    fetchFavorites();
+  }, []);
+
   const handleViewRoom = (roomId: string) => setSelectedPostId(roomId);
+
+  const markFavorite = <T extends { _id: string; isSaved?: boolean }>(room: T) => ({
+    ...room,
+    isSaved: favoriteIds.has(room._id),
+  });
+
+  const featuredRoomsWithFavorites = featuredRooms.map(markFavorite);
+  const forYouRoomsWithFavorites = forYouRooms.map(markFavorite);
+  const newPostsWithFavorites = newPosts.map(markFavorite);
 
   const getPostedTimeAgo = (updatedAt: string) => {
     if (!updatedAt) return "Vừa đăng";
@@ -273,7 +300,7 @@ const HomeNew: React.FC = () => {
         <RoomListSection
           title="Bài đăng nổi bật"
           subtitle="Những bài đăng được đề xuất của các đối tác"
-          rooms={featuredRooms}
+          rooms={featuredRoomsWithFavorites}
           loading={loadingRooms}
           badge="Đối tác"
           badgeStyle={{ background: "#FBBF24", color: "#78350F" }}
@@ -287,7 +314,7 @@ const HomeNew: React.FC = () => {
           title="Dành cho bạn"
           badge="Gợi ý"
           subtitle="Những bài đăng phù hợp với khu vực bạn chọn"
-          rooms={forYouRooms}
+          rooms={forYouRoomsWithFavorites}
           loading={loadingRooms}
           emptyText={`Không tìm thấy phòng tại ${selectedCity || "khu vực này"}.`}
           maxItems={8}
@@ -302,7 +329,7 @@ const HomeNew: React.FC = () => {
           title="Bài đăng mới nhất"
           badge="Mới"
           subtitle="Cập nhật liên tục những tin đăng mới nhất"
-          rooms={newPosts}
+          rooms={newPostsWithFavorites}
           loading={loadingNewPosts}
           emptyText="Chưa có bài đăng nào."
           maxItems={8}

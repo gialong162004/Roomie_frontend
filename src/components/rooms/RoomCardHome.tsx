@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaHeart, FaRegHeart, FaStar } from "react-icons/fa";
 import { PostAPI } from "../../api/api";
 import { useToast } from "../common/ToastProvider";
@@ -34,6 +34,10 @@ const RoomCard: React.FC<RoomCardProps> = ({
   const [isSaved, setIsSaved] = useState(initialSaved);
   const [isLoading, setIsLoading] = useState(false);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    setIsSaved(initialSaved);
+  }, [initialSaved, _id]);
 
   const handleSaveClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -80,13 +84,33 @@ const RoomCard: React.FC<RoomCardProps> = ({
       onClick={onView}
       className="cursor-pointer w-full max-w-[200px] group"
     >
-      {/* Image Container */}
+      {/* Image Container (Hỗ trợ cả Ảnh và Video làm Thumbnail) */}
       <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-3">
-        <img
-          src={image}
-          alt={type}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        {(() => {
+          const isVideo = image?.match(/\.(mp4|webm|ogv|mov|avi)$/i);
+
+          if (isVideo) {
+            return (
+              <video 
+                src={image} 
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                muted
+                playsInline
+                autoPlay
+                loop
+                preload="metadata"
+              />
+            );
+          } else {
+            return (
+              <img
+                src={image || "https://via.placeholder.com/300?text=No+Image"} // Fallback nếu URL rỗng
+                alt={type}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            );
+          }
+        })()}
 
         {/* Gradient overlay at top for heart visibility */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent pointer-events-none rounded-2xl" />

@@ -39,6 +39,7 @@ export default function Home() {
   const [categories, setCategories] = useState<any[]>([]);
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
 
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
@@ -59,6 +60,23 @@ export default function Home() {
       }
     })();
   }, [selectedPostId]);
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const response = (await PostAPI.getFavoritePosts()) as any;
+        const favorites = response?.data || response || [];
+        const ids = favorites
+          .map((item: any) => item?.post?._id || item?._id)
+          .filter(Boolean);
+        setFavoriteIds(new Set(ids));
+      } catch (error) {
+        console.error("Lỗi lấy danh sách yêu thích:", error);
+      }
+    };
+
+    fetchFavorites();
+  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -170,6 +188,11 @@ export default function Home() {
     return pages.filter((item, index) => pages.indexOf(item) === index);
   };
 
+  const roomsWithFavoriteState = results.map((room) => ({
+    ...room,
+    isSaved: favoriteIds.has(room._id),
+  }));
+
   return (
     <div className="w-full bg-[#f8fafc] min-h-screen flex flex-col justify-between">
       <div>
@@ -235,10 +258,10 @@ export default function Home() {
                 <span className="text-gray-500 text-sm">Đang tải dữ liệu...</span>
               </div>
             </div>
-          ) : results.length > 0 ? (
+          ) : roomsWithFavoriteState.length > 0 ? (
             <div className="flex flex-col gap-8 w-full">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8 justify-items-center mx-auto w-full">
-                {results.map((room) => (
+                {roomsWithFavoriteState.map((room) => (
                   <RoomCardHome
                     key={room._id}
                     _id={room._id}
