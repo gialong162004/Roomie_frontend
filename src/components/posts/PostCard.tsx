@@ -47,6 +47,7 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost, onClick }: PostCar
   const [selectedPackage, setSelectedPackage] = useState<BoostPackage>(BOOST_PACKAGES[1]);
   const [available, setAvailable] = useState<boolean>(post.available ?? true);
   const [isUpdatingAvailable, setIsUpdatingAvailable] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     setAvailable(post.available ?? true);
@@ -110,51 +111,30 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost, onClick }: PostCar
         <div className="flex flex-col sm:flex-row">
           {/* Phần ảnh bên trái */}
           <div className="sm:w-80 relative">
-            <div className="grid grid-cols-2 gap-1 p-1">
+            <div className="grid grid-cols-2 gap-2 p-2">
               {displayImages.map((src, index) => {
-              const isVideo = src?.match(/\.(mp4|webm|ogv|mov|avi)$/i);
-
-              return (
-                <div
-                  key={index}
-                  className={`relative cursor-pointer ${
-                    displayImages.length === 1 ? "col-span-2 h-64" :
-                    displayImages.length === 2 && index === 0 ? "col-span-2 h-40" :
-                    displayImages.length === 3 && index === 0 ? "col-span-2 h-40" :
-                    "h-32"
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openViewer(index);
-                  }}
-                >
-                  {/* ✅ Chỉnh sửa tại đây: Logic render Media */}
-                  {isVideo ? (
-                    <video 
-                      src={src} 
-                      className="w-full h-full object-cover rounded hover:opacity-90 transition"
-                      muted
-                      playsInline
-                      autoPlay
-                      loop
-                      preload="metadata"
-                    />
-                  ) : (
-                    <img
-                      src={src || "https://via.placeholder.com/300?text=No+Image"} // Fallback nếu URL rỗng
-                      alt={`${post.title} ${index + 1}`}
-                      className="w-full h-full object-cover rounded hover:opacity-90 transition"
-                    />
-                  )}
-
-                  {index === 3 && remainingCount > 0 && (
-                    <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded hover:bg-opacity-70 transition z-10">
-                      <span className="text-white text-2xl font-bold">+{remainingCount}</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                const isVideo = src?.match(/\.(mp4|webm|ogv|mov|avi)$/i);
+                return (
+                  <div
+                    key={index}
+                    className={`relative cursor-pointer overflow-hidden rounded-lg ${
+                      displayImages.length === 1 ? "col-span-2 h-64" : "h-32"
+                    }`}
+                    onClick={(e) => { e.stopPropagation(); openViewer(index); }}
+                  >
+                    {isVideo ? (
+                      <video src={src} className="w-full h-full object-cover" muted />
+                    ) : (
+                      <img src={src} className="w-full h-full object-cover" alt="" />
+                    )}
+                    {index === 3 && remainingCount > 0 && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold">
+                        +{remainingCount}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             <span
@@ -177,15 +157,27 @@ const PostCard = ({ post, isOwner, onEdit, onDelete, onBoost, onClick }: PostCar
           </div>
 
           {/* Phần thông tin bên phải */}
-          <div className="flex-1 p-5 flex flex-col h-[400px]">
+          <div className="flex-1 p-5 flex flex-col">
             <h3 className="text-xl font-bold text-textDark hover:text-primary cursor-pointer mb-2 line-clamp-2">
               {post.title}
             </h3>
 
             <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin">
-              <p className="text-sm text-textGray mb-3 whitespace-pre-wrap">
+              <p 
+                className={`text-sm text-textGray mb-2 whitespace-pre-wrap transition-all duration-300 ${
+                  !isExpanded ? 'line-clamp-3' : ''
+                }`}
+              >
                 {post.description}
               </p>
+              {post.description && post.description.length > 200 && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+                  className="text-primary text-xs font-semibold hover:underline mb-3 block"
+                >
+                  {isExpanded ? 'Thu gọn' : '...Xem thêm'}
+                </button>
+              )}
 
               <div className="flex items-center gap-4 mb-3 text-sm">
                 <div className="flex items-center gap-1 text-textDark">
