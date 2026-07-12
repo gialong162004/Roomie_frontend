@@ -161,60 +161,59 @@ const RoomDetail: React.FC<RoomDetailProps> = ({
         )}
 
         {/* Khu vực hiển thị Slide Media (Ảnh/Video) */}
-<div className="relative">
-  {(() => {
-    const currentUrl = images[currentImageIndex];
-    // Kiểm tra nhanh dựa trên đuôi file (có thể thay đổi regex tùy Backend của bạn)
-    const isVideo = currentUrl?.match(/\.(mp4|mov|avi|wmv)$/i);
+        <div className="relative">
+          {(() => {
+            const currentUrl = images[currentImageIndex];
+            const isVideo = currentUrl?.match(/\.(mp4|mov|avi|wmv)$/i);
 
-    if (isVideo) {
-      return (
-        <video 
-          src={currentUrl} 
-          className="w-full h-64 sm:h-80 md:h-96 object-cover md:rounded-t-2xl"
-          controls // Hiển thị các nút điều khiển (Play, Pause, Volume)
-          muted // Tắt tiếng mặc định để video có thể tự chạy (nếu cần)
-          playsInline // Chạy trực tiếp trên trang thay vì mở toàn màn hình (trên mobile)
-        />
-      );
-    } else {
-      return (
-        <img 
-          src={currentUrl || "https://via.placeholder.com/800x600?text=No+Image"} // Fallback nếu không có ảnh
-          alt={type} 
-          className="w-full h-64 sm:h-80 md:h-96 object-cover md:rounded-t-2xl" 
-        />
-      );
-    }
-  })()}
-  
-  {badge && (
-    <div className="absolute top-4 left-4 bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full shadow z-10">
-      {badge}
-    </div>
-  )}
-  
-  {images.length > 1 && (
-    <>
-      <button
-        onClick={prevImage}
-        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white w-10 h-10 rounded-full hover:bg-black/70 transition-colors z-10"
-      >
-        ‹
-      </button>
-      <button
-        onClick={nextImage}
-        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white w-10 h-10 rounded-full hover:bg-black/70 transition-colors z-10"
-      >
-        ›
-      </button>
-      
-      <div className="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-3 py-1 rounded-full z-10">
-        {currentImageIndex + 1} / {images.length}
-      </div>
-    </>
-  )}
-</div>
+            if (isVideo) {
+              return (
+                <video 
+                  src={currentUrl} 
+                  className="w-full h-64 sm:h-80 md:h-96 object-cover md:rounded-t-2xl"
+                  controls
+                  muted
+                  playsInline
+                />
+              );
+            } else {
+              return (
+                <img 
+                  src={currentUrl || "https://via.placeholder.com/800x600?text=No+Image"} // Fallback nếu không có ảnh
+                  alt={type} 
+                  className="w-full h-64 sm:h-80 md:h-96 object-cover md:rounded-t-2xl" 
+                />
+              );
+            }
+          })()}
+          
+          {badge && (
+            <div className="absolute top-4 left-4 bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full shadow z-10">
+              {badge}
+            </div>
+          )}
+          
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prevImage}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white w-10 h-10 rounded-full hover:bg-black/70 transition-colors z-10"
+              >
+                ‹
+              </button>
+              <button
+                onClick={nextImage}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white w-10 h-10 rounded-full hover:bg-black/70 transition-colors z-10"
+              >
+                ›
+              </button>
+              
+              <div className="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-3 py-1 rounded-full z-10">
+                {currentImageIndex + 1} / {images.length}
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Nội dung thông tin chi tiết phòng */}
         <div className="p-6 flex flex-col gap-4">

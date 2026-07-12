@@ -22,6 +22,7 @@ const getPostedTimeAgo = (updatedAt: string) => {
 export default function Home() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const isFeaturedMode = searchParams.get("featured") === "1";
 
   const [keyword, setKeyword] = useState(searchParams.get("keyword") || "");
   const [city, setCity] = useState(searchParams.get("city") || "");
@@ -97,31 +98,41 @@ export default function Home() {
     const performSearch = async () => {
       setLoading(true);
       try {
-        const filter: any = {};
-        const qKeyword = searchParams.get("keyword");
-        const qCity = searchParams.get("city");
-        const qDistrict = searchParams.get("district");
-        const qCategory = searchParams.get("category");
-        const qMinPrice = searchParams.get("minPrice");
-        const qMaxPrice = searchParams.get("maxPrice");
+        if (isFeaturedMode) {
+          const response = (await PostAPI.getPriorityPost()) as any;
+          console.log("Dữ liệu API trả về:", response);
+          const featuredRooms = response.content || response.data?.content || response.data || response || [];
 
-        if (qKeyword) filter.keyword = qKeyword;
-        if (qCity) filter.city = qCity;
-        if (qDistrict) filter.district = qDistrict;
-        if (qCategory) filter.category = qCategory;
-        if (qMinPrice) filter.minPrice = Number(qMinPrice);
-        if (qMaxPrice) filter.maxPrice = Number(qMaxPrice);
-        
-        filter.page = pageFromUrl; 
+          setResults(featuredRooms);
+          setTotalPages(1);
+          setTotal(featuredRooms.length);
+        } else {
+          const filter: any = {};
+          const qKeyword = searchParams.get("keyword");
+          const qCity = searchParams.get("city");
+          const qDistrict = searchParams.get("district");
+          const qCategory = searchParams.get("category");
+          const qMinPrice = searchParams.get("minPrice");
+          const qMaxPrice = searchParams.get("maxPrice");
 
-        const response = await PostAPI.searchPosts(filter) as any;
-        
-        setResults(response.content || response.data?.content || response.data || response || []);
-        
-        const totalPages = response.pagination.totalPages;
-        const totalItems = response.pagination.total;
-        setTotalPages(totalPages);
-        setTotal(totalItems);
+          if (qKeyword) filter.keyword = qKeyword;
+          if (qCity) filter.city = qCity;
+          if (qDistrict) filter.district = qDistrict;
+          if (qCategory) filter.category = qCategory;
+          if (qMinPrice) filter.minPrice = Number(qMinPrice);
+          if (qMaxPrice) filter.maxPrice = Number(qMaxPrice);
+          
+          filter.page = pageFromUrl; 
+
+          const response = await PostAPI.searchPosts(filter) as any;
+          
+          setResults(response.content || response.data?.content || response.data || response || []);
+          
+          const totalPages = response.pagination.totalPages;
+          const totalItems = response.pagination.total;
+          setTotalPages(totalPages);
+          setTotal(totalItems);
+        }
       } catch (error) {
         console.error("Lỗi tìm kiếm:", error);
       } finally {
@@ -133,6 +144,7 @@ export default function Home() {
   }, [searchParams]);
 
   const handlePageChange = (pageNumber: number) => {
+    if (isFeaturedMode) return;
     if (pageNumber < 1 || pageNumber > totalPages) return;
     const params = new URLSearchParams(searchParams);
     params.set("page", pageNumber.toString());
@@ -143,6 +155,7 @@ export default function Home() {
   const handleApplyFilter = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const params = new URLSearchParams();
+    params.delete("featured");
     if (keyword.trim()) params.append("keyword", keyword.trim());
     if (city) params.append("city", city);
     if (district) params.append("district", district);
@@ -193,13 +206,18 @@ export default function Home() {
     isSaved: favoriteIds.has(room._id),
   }));
 
+  const pageTitle = isFeaturedMode ? "Bài đăng nổi bật" : "Kết quả tìm kiếm";
+  const pageSubtitle = isFeaturedMode
+    ? "Tất cả bài viết nổi bật được tổng hợp từ API"
+    : "Tìm kiếm phòng trọ theo các tiêu chí chi tiết";
+
   return (
     <div className="w-full bg-[#f8fafc] min-h-screen flex flex-col justify-between">
       <div>
         {/* Header Banner */}
         <div className="bg-teal-600 text-white text-center py-10 shadow-md">
-          <h1 className="text-3xl font-bold tracking-tight">Tìm kiếm nâng cao</h1>
-          <p className="mt-1.5 opacity-90 text-sm">Tìm kiếm phòng trọ theo các tiêu chí chi tiết</p>
+          <h1 className="text-3xl font-bold tracking-tight">{pageTitle}</h1>
+          <p className="mt-1.5 opacity-90 text-sm">{pageSubtitle}</p>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-4">
@@ -244,7 +262,7 @@ export default function Home() {
 
           {/* Thanh đếm số lượng phòng */}
           <div className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100 w-full">
-            <h2 className="text-lg font-bold text-gray-800">Kết quả tìm kiếm</h2>
+            <h2 className="text-lg font-bold text-gray-800">{pageTitle}</h2>
             <span className="text-teal-600 font-semibold bg-teal-50 px-3.5 py-1 rounded-full text-xs md:text-sm">
               {total} phòng
             </span>
@@ -278,7 +296,7 @@ export default function Home() {
               </div>
 
               {/* 📊 THANH PHÂN TRANG (Màu xanh Teal đồng bộ web) */}
-              {totalPages > 1 && (
+              {!isFeaturedMode && totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 py-4 mt-4 select-none">
                   {/* Nút lùi trang (<) */}
                   <button
@@ -328,18 +346,24 @@ export default function Home() {
                     </svg>
                   </button>
                 </div>
-              )}
+                )}
             </div>
           ) : (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-16 text-center w-full">
               <div className="text-6xl mb-4">🔍</div>
-              <h3 className="text-xl font-bold text-gray-700 mb-2">Không tìm thấy kết quả phù hợp</h3>
-              <p className="text-gray-500 text-sm max-w-sm mx-auto">Thử thay đổi thông số trong bộ lọc hoặc đặt lại để tìm các tin đăng khác.</p>
+              <h3 className="text-xl font-bold text-gray-700 mb-2">
+                {isFeaturedMode ? "Không có bài đăng nổi bật nào" : "Không tìm thấy kết quả phù hợp"}
+              </h3>
+              <p className="text-gray-500 text-sm max-w-sm mx-auto">
+                {isFeaturedMode
+                  ? "Hiện chưa có bài đăng nào được đánh dấu nổi bật theo dữ liệu API."
+                  : "Thử thay đổi thông số trong bộ lọc hoặc đặt lại để tìm các tin đăng khác."}
+              </p>
               <button 
                 onClick={handleClearFilters}
                 className="mt-6 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition-colors border"
               >
-                Xóa tất cả bộ lọc
+                {isFeaturedMode ? "Quay lại tìm kiếm" : "Xóa tất cả bộ lọc"}
               </button>
             </div>
           )}
@@ -460,7 +484,7 @@ export default function Home() {
           images={selectedRoom.images?.length ? selectedRoom.images : ["https://visaho.vn/upload_images/images/2022/04/01/phan-loai-can-ho-chung-cu-7.jpg"]}
           type={selectedRoom.title}
           area={selectedRoom.superficies ? `${selectedRoom.superficies} m²` : "-- m²"}
-          address={`${selectedRoom.address}, ${selectedRoom.district}, ${selectedRoom.city}`}
+          address={selectedRoom.address}
           price={formatPrice(selectedRoom.price)}
           badge={selectedRoom.category?.name || "Đã duyệt"}
           description={selectedRoom.description}

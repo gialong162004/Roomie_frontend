@@ -51,11 +51,13 @@ const formatPrice = (price: number): string => {
 };
 
 const HomeNew: React.FC = () => {
-  const { roomsByCategory, recommendedRooms, hasFetched, setData } = useRoomStore();
+  const { roomsByCategory, hasFetched, setData } = useRoomStore();
   const [, setLoadingCategories] = useState(!hasFetched);
   const [loadingRooms, setLoadingRooms] = useState(!hasFetched);
+  const [loadingFeaturedPosts, setLoadingFeaturedPosts] = useState(true);
   const [loadingNewPosts, setLoadingNewPosts] = useState(true);
   const [newPosts, setNewPosts] = useState<Room[]>([]);
+  const [featuredPosts, setFeaturedPosts] = useState<Room[]>([]);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [selectedCity, setSelectedCity] = useState<string>("Toàn quốc");
   const { provinces } = useLocations();
@@ -67,7 +69,7 @@ const HomeNew: React.FC = () => {
   const [showSurveyModal, setShowSurveyModal] = useState(false);
 
   const allRooms: Room[] = Object.values(roomsByCategory).flat();
-  const featuredRooms: Room[] = recommendedRooms;
+  const featuredRooms: Room[] = featuredPosts;
   const forYouRooms: Room[] = [...allRooms]
   .filter((r) => {
     if (selectedCity === "Toàn quốc" || !selectedCity) return true;
@@ -125,10 +127,8 @@ const HomeNew: React.FC = () => {
     const shouldShowSurvey = localStorage.getItem("showSurvey");
 
     if (shouldShowSurvey === "true") {
-      // Đợi 500ms để trang render ổn định rồi mới hiện modal
       const timer = setTimeout(() => {
         setShowSurveyModal(true);
-        // Xóa flag để không hiển thị lại khi refresh trang
         localStorage.removeItem("showSurvey");
       }, 500);
 
@@ -164,6 +164,21 @@ const HomeNew: React.FC = () => {
         showToast("Lỗi khi tải phòng", { type: "error" });
       } finally {
         setLoadingRooms(false);
+      }
+    })();
+  }, []);
+
+  // Fetch featured rooms
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingFeaturedPosts(true);
+        const response = (await PostAPI.getPriorityPost()) as any;
+        setFeaturedPosts(extractRoomsFromResponse(response));
+      } catch {
+        console.error("Lỗi khi tải bài viết nổi bật");
+      } finally {
+        setLoadingFeaturedPosts(false);
       }
     })();
   }, []);
@@ -301,11 +316,13 @@ const HomeNew: React.FC = () => {
           title="Bài đăng nổi bật"
           subtitle="Những bài đăng được đề xuất của các đối tác"
           rooms={featuredRoomsWithFavorites}
-          loading={loadingRooms}
+          loading={loadingFeaturedPosts}
           badge="Đối tác"
           badgeStyle={{ background: "#FBBF24", color: "#78350F" }}
           emptyText="Chưa có bài nổi bật. Hãy nâng cấp VIP để đẩy top."
           onViewRoom={handleViewRoom}
+          onViewAll={() => navigate("/search?featured=1")}
+          viewAllLabel="Xem tất cả"
           backgroundColor="#FFFFFF"
           accentColor="#FF6B00"
         />
@@ -420,7 +437,7 @@ const HomeNew: React.FC = () => {
           images={selectedRoom.images?.length ? selectedRoom.images : ["https://visaho.vn/upload_images/images/2022/04/01/phan-loai-can-ho-chung-cu-7.jpg"]}
           type={selectedRoom.title}
           area={selectedRoom.superficies ? `${selectedRoom.superficies} m²` : "-- m²"}
-          address={`${selectedRoom.address}, ${selectedRoom.district}, ${selectedRoom.city}`}
+          address={selectedRoom.address}
           price={formatPrice(selectedRoom.price)}
           badge={selectedRoom.category?.name || "Đã duyệt"}
           description={selectedRoom.description}

@@ -271,7 +271,7 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-textDark font-semibold mb-2">
-                Tỉnh/Thành phố (Sau sáp nhập) <span className="text-red-500">*</span>
+                Tỉnh/Thành phố (Trước sáp nhập) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -285,7 +285,7 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
 
             <div>
               <label className="block text-textDark font-semibold mb-2">
-                Quận/Huyện/Xã (Sau sáp nhập) <span className="text-red-500">*</span>
+                Quận/Huyện/Xã (Trước sáp nhập) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -301,7 +301,7 @@ export default function CreatePostModal({ isOpen, onClose, editingPost, onSucces
           {/* Địa chỉ cụ thể */}
           <div>
             <label className="block text-textDark font-semibold mb-2">
-              Địa chỉ cụ thể <span className="text-red-500">*</span>
+              Địa chỉ cụ thể (Sau sáp nhập) <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-3 text-textGray" size={20} />

@@ -19,6 +19,9 @@ const getPostDetail = (idPost: string) => {
 const getPost = (params?: any) => {
   return axios.get("/api/posts/approved", { params });
 };
+const getPriorityPost = () => {
+  return axios.get("/api/posts/priority");
+};
 const createPost = (data: PostFormData) => {
   const form = new FormData();
   form.append("title", data.title);
@@ -196,7 +199,7 @@ const historyPayment = () => {
 
 export const AuthAPI = { register, verifyRegister, login, getProfile, forgotPassword, resetPassword };
 export const PostAPI = { getPostDetail, getPost, createPost, getCategory, getMyPost, deletePost, updatePost, getUserPost, getFavoritePosts, 
-  addFavoritePost, removeFavoritePost, searchPosts, getNearbyPosts, editAvailable, getNewPosts, reportPost };
+  addFavoritePost, removeFavoritePost, searchPosts, getNearbyPosts, editAvailable, getNewPosts, reportPost, getPriorityPost };
 export const UserAPI = { getProfile, updateProfile, updateAvatar, getPublicProfile };
 export const MessageAPI = { getConversation, createConversation, deleteConversation, getMessages, chatBot};
 export const NoteAPI = { createNote, updateNote, getNote, deleteNote };
